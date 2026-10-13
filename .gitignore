@@ -1,0 +1,25 @@
+# Secretos
+.env
+
+# Bases de datos locales (vetchain.db, test_vetchain.db)
+*.db
+
+# Datos de Mederi: nunca al repositorio (traen RUC y nombres de clientes)
+data/*
+!data/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# Configuración local del editor y de Claude Code
+.idea/
+.vscode/
+.mcp.json
+.claude/settings.local.json
+
+# Sistema
+.DS_Store
