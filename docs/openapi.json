@@ -1621,23 +1621,71 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Resumen semanal y cifras principales (pendiente)",
-        "operationId": "pending_get_dashboard_summary_api_v1_dashboard_summary_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Dashboard Summary",
+        "operationId": "dashboard_summary_api_v1_dashboard_summary_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardSummaryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/reports": {
@@ -1645,14 +1693,16 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Catálogo de reportes con el origen de sus datos (pendiente)",
-        "operationId": "pending_get_reports_api_v1_reports_get",
+        "summary": "List Reports",
+        "operationId": "list_reports_api_v1_reports_get",
         "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
+          "200": {
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ReportCatalogOut"
+                }
               }
             }
           }
@@ -1669,23 +1719,71 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Los KPIs con su estado (pendiente)",
-        "operationId": "pending_get_reports_kpis_api_v1_reports_kpis_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Kpis",
+        "operationId": "get_kpis_api_v1_reports_kpis_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KpiReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/reports/sales": {
@@ -1693,23 +1791,71 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Pedidos por mes, producto y categoría (pendiente)",
-        "operationId": "pending_get_reports_sales_api_v1_reports_sales_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Sales Report",
+        "operationId": "get_sales_report_api_v1_reports_sales_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/reports/customers": {
@@ -1717,23 +1863,71 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Concentración, maestro de clientes, en riesgo y dormidos (pendiente)",
-        "operationId": "pending_get_reports_customers_api_v1_reports_customers_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Customers Report",
+        "operationId": "get_customers_report_api_v1_reports_customers_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomersReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/reports/stock": {
@@ -1741,23 +1935,71 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Estado del stock (pendiente)",
-        "operationId": "pending_get_reports_stock_api_v1_reports_stock_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Stock Report",
+        "operationId": "get_stock_report_api_v1_reports_stock_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/reports/receivables": {
@@ -1765,23 +2007,71 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Deuda por antigüedad y nivel (estimada) (pendiente)",
-        "operationId": "pending_get_reports_receivables_api_v1_reports_receivables_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Receivables Report",
+        "operationId": "get_receivables_report_api_v1_reports_receivables_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceivablesReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/reports/salespeople": {
@@ -1789,23 +2079,71 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Pedidos de 12 meses y seguimiento de alertas por vendedor (pendiente)",
-        "operationId": "pending_get_reports_salespeople_api_v1_reports_salespeople_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Salespeople Report",
+        "operationId": "get_salespeople_report_api_v1_reports_salespeople_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalespeopleReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/reports/funnel": {
@@ -1813,23 +2151,71 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Embudo: alertas, contactos, cotizaciones, convertidas y monto recuperado (pendiente)",
-        "operationId": "pending_get_reports_funnel_api_v1_reports_funnel_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Funnel Report",
+        "operationId": "get_funnel_report_api_v1_reports_funnel_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FunnelReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/import-suggestions": {
@@ -2023,6 +2409,37 @@
   },
   "components": {
     "schemas": {
+      "CategoryAmountOut": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "amount"
+        ],
+        "title": "CategoryAmountOut"
+      },
       "CommercialTermsOut": {
         "properties": {
           "level": {
@@ -2162,6 +2579,47 @@
           "per_page"
         ],
         "title": "ContactPageOut"
+      },
+      "CustomerAmountOut": {
+        "properties": {
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "share_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share Pct"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruc",
+          "name",
+          "amount",
+          "share_pct"
+        ],
+        "title": "CustomerAmountOut"
       },
       "CustomerDetailOut": {
         "properties": {
@@ -2601,6 +3059,295 @@
         ],
         "title": "CustomerPageOut"
       },
+      "CustomersReportOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "master_count": {
+            "type": "integer",
+            "title": "Master Count"
+          },
+          "active_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Count"
+          },
+          "no_orders_12m": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Orders 12M"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "top_ten_share_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Ten Share Pct"
+          },
+          "top_customers": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerAmountOut"
+            },
+            "type": "array",
+            "title": "Top Customers"
+          },
+          "at_risk_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "At Risk Count"
+          },
+          "dormant_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dormant Count"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "master_count",
+          "active_count",
+          "no_orders_12m",
+          "amount",
+          "top_ten_share_pct",
+          "top_customers",
+          "warnings"
+        ],
+        "title": "CustomersReportOut"
+      },
+      "DashboardSummaryOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "order_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Count"
+          },
+          "average_order": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Order"
+          },
+          "active_customers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Customers"
+          },
+          "top_ten_share_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Ten Share Pct"
+          },
+          "monthly": {
+            "items": {
+              "$ref": "#/components/schemas/MonthlyAmountOut"
+            },
+            "type": "array",
+            "title": "Monthly"
+          },
+          "top_customers": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerAmountOut"
+            },
+            "type": "array",
+            "title": "Top Customers"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "amount",
+          "order_count",
+          "average_order",
+          "active_customers",
+          "top_ten_share_pct",
+          "monthly",
+          "top_customers",
+          "warnings"
+        ],
+        "title": "DashboardSummaryOut"
+      },
+      "FunnelReportOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "alerts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alerts"
+          },
+          "contacts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contacts"
+          },
+          "quotations": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quotations"
+          },
+          "converted": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Converted"
+          },
+          "recovered_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovered Amount"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": [
+              "alerts_unavailable",
+              "conversion_unavailable"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "period"
+        ],
+        "title": "FunnelReportOut"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2613,6 +3360,100 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "KpiOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "data_origin": {
+            "type": "string",
+            "title": "Data Origin"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "value",
+          "target",
+          "status",
+          "data_origin",
+          "warning"
+        ],
+        "title": "KpiOut"
+      },
+      "KpiReportOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/KpiOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "items",
+          "warnings"
+        ],
+        "title": "KpiReportOut"
       },
       "LevelThresholdsIn": {
         "properties": {
@@ -2700,6 +3541,41 @@
         "type": "object",
         "title": "MeUpdateIn"
       },
+      "MonthlyAmountOut": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "format": "date",
+            "title": "Month"
+          },
+          "order_count": {
+            "type": "integer",
+            "title": "Order Count"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "dispatched_amount": {
+            "type": "number",
+            "title": "Dispatched Amount"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "order_count",
+          "amount",
+          "dispatched_amount"
+        ],
+        "title": "MonthlyAmountOut"
+      },
       "OrderOut": {
         "properties": {
           "order_no": {
@@ -2784,6 +3660,65 @@
           "per_page"
         ],
         "title": "OrderPageOut"
+      },
+      "PeriodOut": {
+        "properties": {
+          "from_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Date"
+          },
+          "to_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Date"
+          },
+          "data_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data As Of"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_date",
+          "to_date",
+          "data_as_of",
+          "warning"
+        ],
+        "title": "PeriodOut"
       },
       "PricingIn": {
         "properties": {
@@ -2883,6 +3818,35 @@
           "promo_margin_cut_pct"
         ],
         "title": "PricingOut"
+      },
+      "ProductAmountOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "amount"
+        ],
+        "title": "ProductAmountOut"
       },
       "ProductOut": {
         "properties": {
@@ -3491,6 +4455,310 @@
         ],
         "title": "QuotationPreviewOut"
       },
+      "ReceivablesReportOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "outstanding_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outstanding Amount"
+          },
+          "overdue_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overdue Amount"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": [
+              "receipts_not_linked"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "period"
+        ],
+        "title": "ReceivablesReportOut"
+      },
+      "ReportCatalogOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportEntryOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "default": 1
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page",
+            "default": 7
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ReportCatalogOut"
+      },
+      "ReportEntryOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "data_origin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Origin"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "path",
+          "data_origin",
+          "warning"
+        ],
+        "title": "ReportEntryOut"
+      },
+      "SalesReportOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "monthly": {
+            "items": {
+              "$ref": "#/components/schemas/MonthlyAmountOut"
+            },
+            "type": "array",
+            "title": "Monthly"
+          },
+          "products": {
+            "items": {
+              "$ref": "#/components/schemas/ProductAmountOut"
+            },
+            "type": "array",
+            "title": "Products"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryAmountOut"
+            },
+            "type": "array",
+            "title": "Categories"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "order_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Count"
+          },
+          "margin_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Pct"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "monthly",
+          "products",
+          "categories",
+          "amount",
+          "order_count",
+          "warnings"
+        ],
+        "title": "SalesReportOut"
+      },
+      "SalespeopleReportOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SalespersonAmountOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "amount",
+          "items",
+          "warnings"
+        ],
+        "title": "SalespeopleReportOut"
+      },
+      "SalespersonAmountOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "order_count": {
+            "type": "integer",
+            "title": "Order Count"
+          },
+          "customer_count": {
+            "type": "integer",
+            "title": "Customer Count"
+          },
+          "share_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share Pct"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "amount",
+          "order_count",
+          "customer_count",
+          "share_pct"
+        ],
+        "title": "SalespersonAmountOut"
+      },
       "SessionCreateIn": {
         "properties": {
           "email": {
@@ -3537,6 +4805,101 @@
           "user"
         ],
         "title": "SessionOut"
+      },
+      "StockItemOut": {
+        "properties": {
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "balance": {
+            "type": "number",
+            "title": "Balance"
+          },
+          "last_period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Last Period End"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          },
+          "warning": {
+            "type": "string",
+            "const": "stock_balance_unconfirmed",
+            "title": "Warning",
+            "default": "stock_balance_unconfirmed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_code",
+          "product_name",
+          "balance",
+          "last_period_end"
+        ],
+        "title": "StockItemOut"
+      },
+      "StockReportOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "stock_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stock As Of"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StockItemOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "stock_as_of",
+          "items",
+          "warnings"
+        ],
+        "title": "StockReportOut"
       },
       "UserCreateIn": {
         "properties": {

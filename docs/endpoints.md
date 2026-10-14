@@ -85,17 +85,22 @@ La emisión recalcula la vista previa, no confía en importes enviados por la we
 ## Panel y reportes — `reports`
 | Método | Ruta | Para qué | Roles | Estado |
 |---|---|---|---|---|
-| GET | /dashboard/summary | Resumen semanal y cifras principales (incluye pedidos por mes y seguimiento de alertas) | M | ⏳ |
-| GET | /reports | Catálogo de reportes con el origen de sus datos | M | ⏳ |
-| GET | /reports/kpis | Los KPIs con su estado | M | ⏳ |
-| GET | /reports/sales | Pedidos por mes, producto y categoría; precio pagado frente a referencia | M | ⏳ |
-| GET | /reports/customers | Concentración, maestro de clientes, en riesgo y dormidos | M | ⏳ |
-| GET | /reports/stock | Estado del stock, sobrestock y quiebres | M | ⏳ |
-| GET | /reports/receivables | Deuda por antigüedad y nivel (estimada) | M | ⏳ |
-| GET | /reports/salespeople | Pedidos de 12 meses y seguimiento de alertas por vendedor | M | ⏳ |
-| GET | /reports/funnel | Embudo: alertas, contactos, cotizaciones, convertidas y monto recuperado | M | ⏳ |
+| GET | /dashboard/summary | Monto y pedidos de 12 meses, ticket, clientes, concentración y meses; alertas con aviso | M | ✅ |
+| GET | /reports | Catálogo de reportes con el origen de sus datos | M | ✅ |
+| GET | /reports/kpis | Valores disponibles sin metas ni estados inventados | M | ✅ parcial |
+| GET | /reports/sales | Pedidos por mes, producto y categoría; margen sin datos de costos | M | ✅ |
+| GET | /reports/customers | Concentración, maestro de clientes y top; riesgo y dormancia pendientes de reglas | M | ✅ parcial |
+| GET | /reports/stock | Saldo por producto al último cierre, con aviso de campo sin confirmar y sin lotes | M | ✅ parcial |
+| GET | /reports/receivables | Aviso: cobros y pedidos no se pueden enlazar | M | ✅ aviso |
+| GET | /reports/salespeople | Monto, pedidos y clientes de 12 meses por vendedor; alertas pendientes | M | ✅ parcial |
+| GET | /reports/funnel | Estructura sin cifras hasta definir alertas y conversión | M | ✅ aviso |
 
-Todos aceptan `?from=&to=`.
+Las rutas con cifras aceptan `?from=&to=`; el catálogo `/reports` no necesita fechas.
+
+Sin fechas, los 12 meses terminan en el último pedido cargado (`data_as_of`). Se excluyen líneas bonificadas,
+productos no veterinarios y pedidos cancelados (C); esta regla de estados es provisional. Los montos son de pedidos,
+sin IGV: no acreditan venta facturada. Cada cifra declara `data_origin=real`; si faltan datos se devuelve `null` y
+un aviso. Los saldos del kardex están por confirmar, no hay costos para rentabilidad ni relación entre cobros y pedidos.
 
 ## Preguntas a los datos — `explanations`
 | Método | Ruta | Para qué | Roles | Estado |

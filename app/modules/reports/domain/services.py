@@ -68,3 +68,25 @@ class RecoveredAmountCalculator:
             if contacted_on is not None and contacted_on <= order_date <= contacted_on + self._window:
                 total = total + amount
         return total
+
+
+class ReportCalculator:
+    """Cálculos comunes sobre importes de pedidos, sin inferir ventas facturadas."""
+
+    @staticmethod
+    def twelve_month_start(as_of: date) -> date:
+        try:
+            previous = as_of.replace(year=as_of.year - 1)
+        except ValueError:
+            previous = as_of.replace(year=as_of.year - 1, day=28)
+        return previous + timedelta(days=1)
+
+    @staticmethod
+    def share(part: Money, whole: Money) -> Decimal | None:
+        if whole.amount == 0:
+            return None
+        return (part.amount * 100 / whole.amount).quantize(Decimal("0.1"))
+
+    @staticmethod
+    def average(amount: Money, count: int) -> Money | None:
+        return amount.divided_by(count) if count else None
