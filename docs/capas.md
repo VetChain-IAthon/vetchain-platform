@@ -281,7 +281,8 @@ Renombres pendientes en el código para alinearlo con este contrato:
    importar un tipo del dominio de `explanations`, y `run_allowed_query(query: InsightQuery)` obliga a `reports`
    a importar otro. Las dos cosas van contra la regla "nadie importa el domain de otro".
    Propuesta: que `public.py` reciba y devuelva DTO propios (dataclasses simples definidos en `public.py`), o subir
-   esos tipos al shared_kernel.
+   esos tipos al shared_kernel. **Aplicado:** `explain_alert(AlertFiguresInput)` y
+   `run_allowed_query(query_type, date_from, date_to, filters)` usan DTO y primitivos propios.
 3. ~~El shared_kernel mezcla dominio e infraestructura en `app/core/`.~~ **Resuelto:** la parte pura vive en
    `app/core/domain/` (tipos, errores, `Clock`, `UnitOfWork`) y `app/core/application/` (`Page`, `Paging`).
    La infraestructura compartida (`SqlAlchemyUnitOfWork`, ORM de Defontana, cargador) vive en `app/infrastructure/`.

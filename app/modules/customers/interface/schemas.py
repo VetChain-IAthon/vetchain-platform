@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from app.core.schemas import JsonNumber
 from app.modules.customers.application import use_cases as uc
-from app.modules.customers.domain.entities import Contact, OrderSummary, ProductPurchase
+from app.modules.customers.domain.entities import Contact, CustomerDiscard, OrderSummary, ProductPurchase
 
 DataOriginReal = Literal["real"]
 
@@ -146,6 +146,7 @@ class DormantCustomerPageOut(BaseModel):
     dormant_count: int = Field(description="Sin pedidos en los 12 meses, antes de buscar o filtrar")
     ordered_before_count: int = Field(description="Dormidos que sí tuvieron pedidos antes")
     type_counts: DormantTypeCountsOut = Field(description="Dormidos que coinciden con la búsqueda, por tipo")
+    discarded_count: int = Field(description="Descartados vigentes de la cartera visible; no están en esta lista")
     data_as_of: date | None = Field(description="Fecha del último pedido cargado: la ventana de 12 meses termina aquí")
     data_origin: DataOriginReal = "real"
 
@@ -158,6 +159,74 @@ class DormantCustomerPageOut(BaseModel):
             customer_count=result.customer_count, dormant_count=result.dormant_count,
             ordered_before_count=result.ordered_before_count,
             type_counts=DormantTypeCountsOut(all=counts.get("all", 0), company=counts.get("company", 0), person=counts.get("person", 0)),
+            discarded_count=result.discarded_count, data_as_of=result.data_as_of,
+        )
+
+
+DiscardReasonValue = Literal["business_closed", "data_changed", "not_viable", "other"]
+
+
+class CustomerDiscardIn(BaseModel):
+    reason: DiscardReasonValue = Field(description="business_closed: cerró o dejó de operar · data_changed: cambió de "
+                                                   "RUC o razón social · not_viable: ya no es viable · other: exige nota")
+    note: str | None = Field(None, max_length=300)
+
+
+class CustomerDiscardOut(BaseModel):
+    ruc: str
+    reason: DiscardReasonValue
+    note: str | None
+    discarded_on: date
+
+    @classmethod
+    def from_domain(cls, discard: CustomerDiscard) -> "CustomerDiscardOut":
+        return cls(ruc=discard.ruc.value, reason=discard.reason.value, note=discard.note, discarded_on=discard.discarded_on)
+
+
+class DiscardedCustomerOut(DormantCustomerOut):
+    reason: DiscardReasonValue
+    note: str | None
+    discarded_on: date
+    discarded_by_name: str | None = Field(description="null si el usuario ya no existe")
+    ordered_after_discard: bool = Field(description="Volvió a pedir después del descarte: conviene revisarlo")
+
+    @classmethod
+    def from_result(cls, item: uc.DiscardedCustomer) -> "DiscardedCustomerOut":
+        customer, act, discard = item.customer, item.lifetime, item.discard
+        return cls(
+            ruc=customer.ruc.value, name=customer.name, customer_type=customer.customer_type, region=customer.region,
+            order_count=act.order_count, lifetime_amount=act.amount.amount, last_order_date=act.last_order_date,
+            reason=discard.reason.value, note=discard.note, discarded_on=discard.discarded_on,
+            discarded_by_name=item.discarded_by_name, ordered_after_discard=item.ordered_after_discard,
+        )
+
+
+class DiscardReasonCountsOut(BaseModel):
+    all: int
+    business_closed: int
+    data_changed: int
+    not_viable: int
+    other: int
+
+
+class DiscardedCustomerPageOut(BaseModel):
+    items: list[DiscardedCustomerOut]
+    total: int
+    page: int
+    per_page: int
+    discarded_count: int = Field(description="Descartados vigentes de la cartera visible, antes de buscar o filtrar")
+    reason_counts: DiscardReasonCountsOut = Field(description="Descartados que coinciden con la búsqueda, por motivo")
+    data_as_of: date | None
+    data_origin: DataOriginReal = "real"
+
+    @classmethod
+    def from_result(cls, result: uc.DiscardedCustomerList) -> "DiscardedCustomerPageOut":
+        counts = result.reason_counts
+        return cls(
+            items=[DiscardedCustomerOut.from_result(item) for item in result.page.items],
+            total=result.page.total, page=result.page.page, per_page=result.page.per_page,
+            discarded_count=result.discarded_count,
+            reason_counts=DiscardReasonCountsOut(**{key: counts.get(key, 0) for key in DiscardReasonCountsOut.model_fields}),
             data_as_of=result.data_as_of,
         )
 

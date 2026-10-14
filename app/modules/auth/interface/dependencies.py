@@ -62,4 +62,11 @@ def authenticate(token: str) -> SessionUser:
         return AuthenticateToken(_token_service(), SqlAlchemyUserRepository(db), _uow(db)).execute(token)
 
 
-public.configure(authenticate)
+def user_names(user_ids: list[int]) -> dict[int, str]:
+    with SessionLocal() as db:
+        repository = SqlAlchemyUserRepository(db)
+        users = [repository.get(user_id) for user_id in user_ids]
+    return {user.id: user.full_name for user in users if user is not None}
+
+
+public.configure(authenticate, user_names)
