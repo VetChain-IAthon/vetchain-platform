@@ -30,3 +30,9 @@ class FallbackTextBuilder(Protocol):
 
 class PromptRepository(Protocol):
     def get(self, name: str) -> str: ...
+
+
+class CustomerNameSource(Protocol):
+    def names(self) -> frozenset[str]:
+        """Nombres de todos los clientes, para que PrivacyGuard los detecte en la pregunta antes de enviarla a la IA."""
+        ...

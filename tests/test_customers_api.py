@@ -176,3 +176,55 @@ def test_customer_brief_uses_real_orders_and_flags_what_is_pending(client, manag
     assert bad.status_code == 400 and bad.json()["error"]["code"] == "invalid_period"
     assert client.get("/api/v1/customers/20111111111/brief?projection=week", headers=manager).status_code == 422
     assert client.get("/api/v1/customers/20111111111/brief", headers=login("salesperson")).status_code == 403
+
+
+def _add_old_customer(db):
+    """Cliente con pedidos solo antes de la ventana de 12 meses (corte 2025-03-01)."""
+    from app.infrastructure.loaders.defontana_csv import load_source
+    from tests.defontana_sample import SPEC
+
+    load_source(db, SPEC["customers"], [["20333333333", "VET ANTIGUA S.A.C.", "AV. 3", "", "", "002", "X", "015", "CUSCO", "006", "", "001", "0.00", "0.00", "1", "0.00"]])
+    load_source(db, SPEC["orders"], [["P0", "2023-05-02", "20333333333", "VET ANTIGUA", "002", "ANA", "001", "30.00", "0.00", "5.40", "35.40", "T"]])
+    load_source(db, SPEC["order_lines"], [["P0", "2023-05-02", "20333333333", "002", "1", "MED0000001", "X", "001", "1", "1", "1", "30.0000000000", "0.00", "30.00"]])
+    db.commit()
+
+
+def test_discard_and_restore_dormant_customer(client, manager, db):
+    _add_old_customer(db)
+    url = "/api/v1/customers/20333333333/discard"
+    created = client.post(url, headers=manager, json={"reason": "business_closed", "note": "  Cerró el local en 2024  "})
+    assert created.status_code == 201, created.text
+    assert created.json()["reason"] == "business_closed" and created.json()["note"] == "Cerró el local en 2024"
+    assert client.post(url, headers=manager, json={"reason": "not_viable"}).status_code == 409
+
+    dormant = client.get("/api/v1/customers/dormant", headers=manager).json()
+    assert [i["ruc"] for i in dormant["items"]] == ["12345678"] and dormant["discarded_count"] == 1
+    assert dormant["dormant_count"] == 1
+
+    discarded = client.get("/api/v1/customers/discarded", headers=manager).json()
+    assert discarded["discarded_count"] == 1 and discarded["reason_counts"]["business_closed"] == 1
+    item = discarded["items"][0]
+    assert item["ruc"] == "20333333333" and item["lifetime_amount"] == 30 and item["discarded_by_name"] == "Usuario manager"
+    assert item["ordered_after_discard"] is False and item["last_order_date"] == "2023-05-02"
+    assert client.get("/api/v1/customers/discarded?reason=other", headers=manager).json()["total"] == 0
+
+    assert client.delete(url, headers=manager).status_code == 204
+    assert client.delete(url, headers=manager).status_code == 404
+    assert client.get("/api/v1/customers/discarded", headers=manager).json()["total"] == 0
+    assert client.get("/api/v1/customers/dormant", headers=manager).json()["dormant_count"] == 2
+    # Se puede volver a descartar; el historial guarda el descarte anterior.
+    assert client.post(url, headers=manager, json={"reason": "data_changed"}).status_code == 201
+
+
+def test_discard_rules(client, manager, login, db):
+    _add_old_customer(db)
+    active = client.post("/api/v1/customers/20111111111/discard", headers=manager, json={"reason": "not_viable"})
+    assert active.status_code == 400 and active.json()["error"]["code"] == "customer_not_dormant"
+    other = client.post("/api/v1/customers/20333333333/discard", headers=manager, json={"reason": "other", "note": " "})
+    assert other.status_code == 400 and other.json()["error"]["code"] == "note_required"
+    assert client.post("/api/v1/customers/20333333333/discard", headers=manager, json={"reason": "x"}).status_code == 422
+    assert client.post("/api/v1/customers/99999999999/discard", headers=manager, json={"reason": "not_viable"}).status_code == 404
+    # El vendedor 002 solo descarta los de su cartera (20333333333 es del 002).
+    seller = login("salesperson")
+    assert client.post("/api/v1/customers/20333333333/discard", headers=seller, json={"reason": "not_viable"}).status_code == 201
+    assert client.get("/api/v1/customers/discarded", headers=seller).json()["total"] == 1

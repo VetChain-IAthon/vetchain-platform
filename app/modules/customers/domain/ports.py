@@ -12,6 +12,7 @@ from app.modules.customers.domain.entities import (
     Contact,
     Customer,
     CustomerActivity,
+    CustomerDiscard,
     OrderSummary,
     PeriodOrder,
     PeriodProduct,
@@ -103,4 +104,24 @@ class SettingsGateway(Protocol):
 
     def commercial_terms(self, level: Level) -> CommercialTerms:
         """BusinessRuleError si faltan las reglas del nivel."""
+        ...
+
+
+class DiscardRepository(Protocol):
+    def active_for(self, ruc: Ruc) -> CustomerDiscard | None: ...
+
+    def active(self) -> dict[Ruc, CustomerDiscard]:
+        """Descartes vigentes (sin restaurar), por cliente."""
+        ...
+
+    def add(self, discard: CustomerDiscard) -> CustomerDiscard: ...
+
+    def save(self, discard: CustomerDiscard) -> None:
+        """Guarda la restauración de un descarte existente."""
+        ...
+
+
+class UserDirectoryGateway(Protocol):
+    def names(self, user_ids: list[int]) -> dict[int, str]:
+        """Nombre completo de cada usuario que exista."""
         ...

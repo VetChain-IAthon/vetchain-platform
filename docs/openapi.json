@@ -663,6 +663,128 @@
         }
       }
     },
+    "/api/v1/customers/discarded": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "List Discarded Customers",
+        "description": "Clientes dormidos descartados (cerraron, cambiaron de datos o ya no son viables), del más reciente al más antiguo.",
+        "operationId": "list_discarded_customers_api_v1_customers_discarded_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Nombre, departamento o inicio del RUC",
+              "title": "Search"
+            },
+            "description": "Nombre, departamento o inicio del RUC"
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "business_closed",
+                    "data_changed",
+                    "not_viable",
+                    "other"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reason"
+            }
+          },
+          {
+            "name": "salesperson_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 3
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Solo gerencia; al vendedor se le fuerza el suyo",
+              "title": "Salesperson Code"
+            },
+            "description": "Solo gerencia; al vendedor se le fuerza el suyo"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscardedCustomerPageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/customers/{ruc}": {
       "get": {
         "tags": [
@@ -1105,6 +1227,103 @@
         }
       }
     },
+    "/api/v1/customers/{ruc}/discard": {
+      "post": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Discard Customer",
+        "description": "Descarta un cliente dormido: sale de la lista de dormidos y pasa a la de descartados. Se puede restaurar.",
+        "operationId": "discard_customer_api_v1_customers__ruc__discard_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerDiscardIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerDiscardOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Restore Customer",
+        "description": "Restaura un cliente descartado: vuelve a la lista de dormidos. El descarte queda en el historial.",
+        "operationId": "restore_customer_api_v1_customers__ruc__discard_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/customers/{ruc}/whatsapp-link": {
       "get": {
         "tags": [
@@ -1272,14 +1491,37 @@
         "tags": [
           "preguntas a los datos"
         ],
-        "summary": "Pregunta en lenguaje natural; la respuesta lista sus fuentes (pendiente)",
-        "operationId": "pending_post_insights_questions_api_v1_insights_questions_post",
+        "summary": "Ask Insight Question",
+        "description": "Pregunta en lenguaje natural. Gemini solo elige una consulta permitida; las cifras salen de la base.",
+        "operationId": "ask_insight_question_api_v1_insights_questions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsightQuestionIn"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
+          "200": {
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/InsightAnswerOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -4317,6 +4559,80 @@
         ],
         "title": "CustomerDetailOut"
       },
+      "CustomerDiscardIn": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "business_closed",
+              "data_changed",
+              "not_viable",
+              "other"
+            ],
+            "title": "Reason",
+            "description": "business_closed: cerró o dejó de operar · data_changed: cambió de RUC o razón social · not_viable: ya no es viable · other: exige nota"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "CustomerDiscardIn"
+      },
+      "CustomerDiscardOut": {
+        "properties": {
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "business_closed",
+              "data_changed",
+              "not_viable",
+              "other"
+            ],
+            "title": "Reason"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "discarded_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Discarded On"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruc",
+          "reason",
+          "note",
+          "discarded_on"
+        ],
+        "title": "CustomerDiscardOut"
+      },
       "CustomerLevelIn": {
         "properties": {
           "max_discount_pct": {
@@ -5051,6 +5367,217 @@
         ],
         "title": "DecisionIn"
       },
+      "DiscardReasonCountsOut": {
+        "properties": {
+          "all": {
+            "type": "integer",
+            "title": "All"
+          },
+          "business_closed": {
+            "type": "integer",
+            "title": "Business Closed"
+          },
+          "data_changed": {
+            "type": "integer",
+            "title": "Data Changed"
+          },
+          "not_viable": {
+            "type": "integer",
+            "title": "Not Viable"
+          },
+          "other": {
+            "type": "integer",
+            "title": "Other"
+          }
+        },
+        "type": "object",
+        "required": [
+          "all",
+          "business_closed",
+          "data_changed",
+          "not_viable",
+          "other"
+        ],
+        "title": "DiscardReasonCountsOut"
+      },
+      "DiscardedCustomerOut": {
+        "properties": {
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "customer_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Type",
+            "description": "company | person | other"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
+          },
+          "order_count": {
+            "type": "integer",
+            "title": "Order Count",
+            "description": "Pedidos en todo el historial"
+          },
+          "lifetime_amount": {
+            "type": "number",
+            "title": "Lifetime Amount",
+            "description": "Monto histórico de pedidos, sin IGV, solo veterinarios"
+          },
+          "last_order_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Order Date",
+            "description": "null si no tiene pedidos en los archivos"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "business_closed",
+              "data_changed",
+              "not_viable",
+              "other"
+            ],
+            "title": "Reason"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "discarded_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Discarded On"
+          },
+          "discarded_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discarded By Name",
+            "description": "null si el usuario ya no existe"
+          },
+          "ordered_after_discard": {
+            "type": "boolean",
+            "title": "Ordered After Discard",
+            "description": "Volvió a pedir después del descarte: conviene revisarlo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruc",
+          "name",
+          "customer_type",
+          "region",
+          "order_count",
+          "lifetime_amount",
+          "last_order_date",
+          "reason",
+          "note",
+          "discarded_on",
+          "discarded_by_name",
+          "ordered_after_discard"
+        ],
+        "title": "DiscardedCustomerOut"
+      },
+      "DiscardedCustomerPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DiscardedCustomerOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          },
+          "discarded_count": {
+            "type": "integer",
+            "title": "Discarded Count",
+            "description": "Descartados vigentes de la cartera visible, antes de buscar o filtrar"
+          },
+          "reason_counts": {
+            "$ref": "#/components/schemas/DiscardReasonCountsOut",
+            "description": "Descartados que coinciden con la búsqueda, por motivo"
+          },
+          "data_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data As Of"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "per_page",
+          "discarded_count",
+          "reason_counts",
+          "data_as_of"
+        ],
+        "title": "DiscardedCustomerPageOut"
+      },
       "DormantCustomerOut": {
         "properties": {
           "ruc": {
@@ -5160,6 +5687,11 @@
             "$ref": "#/components/schemas/DormantTypeCountsOut",
             "description": "Dormidos que coinciden con la búsqueda, por tipo"
           },
+          "discarded_count": {
+            "type": "integer",
+            "title": "Discarded Count",
+            "description": "Descartados vigentes de la cartera visible; no están en esta lista"
+          },
           "data_as_of": {
             "anyOf": [
               {
@@ -5190,6 +5722,7 @@
           "dormant_count",
           "ordered_before_count",
           "type_counts",
+          "discarded_count",
           "data_as_of"
         ],
         "title": "DormantCustomerPageOut"
@@ -5569,6 +6102,47 @@
           "updated_rows"
         ],
         "title": "ImportPreviewOut"
+      },
+      "InsightAnswerOut": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "data_origin": {
+            "type": "string",
+            "title": "Data Origin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "sources",
+          "data_origin"
+        ],
+        "title": "InsightAnswerOut"
+      },
+      "InsightQuestionIn": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Question"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "InsightQuestionIn"
       },
       "KpiOut": {
         "properties": {

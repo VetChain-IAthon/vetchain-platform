@@ -3,23 +3,30 @@
 Los montos son pedidos sin IGV de productos veterinarios: un pedido no es una venta facturada.
 La ventana de 12 meses termina en la fecha de corte de los datos (el último pedido cargado).
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, timedelta
 from decimal import Decimal
 
 from app.core.application import Page, Paging, SessionUser
-from app.core.domain import BusinessRuleError, Clock, Money, NotFoundError, Ruc, UnitOfWork
+from app.core.domain import BusinessRuleError, Clock, ConflictError, Money, NotFoundError, Ruc, UnitOfWork
 from app.modules.customers.domain.entities import (
     Contact,
     Customer,
     CustomerActivity,
+    CustomerDiscard,
     CustomerStanding,
     OrderSummary,
     PeriodOrder,
     PeriodProduct,
     ProductPurchase,
 )
-from app.modules.customers.domain.ports import ContactRepository, CustomerReadRepository, SettingsGateway
+from app.modules.customers.domain.ports import (
+    ContactRepository,
+    CustomerReadRepository,
+    DiscardRepository,
+    SettingsGateway,
+    UserDirectoryGateway,
+)
 from app.modules.customers.domain.services import (
     AlertPrioritizer,
     DormancyEvaluator,
@@ -33,6 +40,7 @@ from app.modules.customers.domain.value_objects import (
     CommercialTerms,
     ContactOutcome,
     CustomerStatus,
+    DiscardReason,
     Level,
     PurchaseRhythm,
     SalespersonScope,
@@ -138,52 +146,185 @@ class DormantCustomerList:
     page: Page[DormantCustomer]
     data_as_of: date | None
     customer_count: int  # cartera visible, sin filtros
-    dormant_count: int  # sin pedidos en 12 meses, sin filtros
+    dormant_count: int  # sin pedidos en 12 meses, sin filtros y sin los descartados
     ordered_before_count: int  # de los dormidos, los que sí tienen pedidos antes
     type_counts: dict[str, int]  # dormidos que coinciden con la búsqueda, por tipo; "all" los suma todos
+    discarded_count: int = 0  # descartados vigentes de la cartera visible
+
+
+def _is_dormant(activity: CustomerActivity, window_start: date | None) -> bool:
+    """Sin pedidos en la ventana de 12 meses (o nunca)."""
+    last = activity.last_order_date
+    return last is None or window_start is None or last < window_start
+
+
+def _matches(customer: Customer, text: str) -> bool:
+    return (not text or text in customer.name.casefold() or text in (customer.region or "").casefold()
+            or customer.ruc.value.startswith(text))
+
+
+def _count_types(customers: list[Customer]) -> dict[str, int]:
+    counts = {"all": len(customers)}
+    for customer in customers:
+        kind = customer.customer_type or "other"
+        counts[kind] = counts.get(kind, 0) + 1
+    return counts
 
 
 class ListDormantCustomers:
     """Clientes sin pedidos en la ventana de 12 meses, ordenados por monto histórico (sin IGV, solo veterinarios).
 
-    Incluye a los que nunca tuvieron pedidos en los archivos. No es el estado «dormido» por ritmo de compra de las
-    alertas, que espera los factores de gerencia: aquí basta con no haber pedido en 12 meses.
+    Incluye a los que nunca tuvieron pedidos en los archivos y deja fuera a los descartados.
+    No es el estado «dormido» por ritmo de compra de las alertas, que espera los factores de gerencia:
+    aquí basta con no haber pedido en 12 meses.
     """
 
-    def __init__(self, customers: CustomerReadRepository, uow: UnitOfWork) -> None:
-        self.customers, self.uow = customers, uow
+    def __init__(self, customers: CustomerReadRepository, uow: UnitOfWork, discards: DiscardRepository) -> None:
+        self.customers, self.uow, self.discards = customers, uow, discards
 
     def execute(self, query: DormantCustomersQuery, scope: SalespersonScope) -> DormantCustomerList:
         with self.uow:
             as_of = _data_as_of(self.customers)
             found = self.customers.all_in_scope(scope)
-            lifetime = self.customers.activity([c.ruc for c in found], date.min) if found else {}
+            discarded = self.discards.active()
+            visible = [c for c in found if c.ruc not in discarded]
+            lifetime = self.customers.activity([c.ruc for c in visible], date.min) if visible else {}
             window_start = TwelveMonthWindow.start(as_of) if as_of else None
 
             dormant = []
-            for customer in found:
+            for customer in visible:
                 act = lifetime.get(customer.ruc, _empty_activity(customer.ruc))
-                last = act.last_order_date
-                if last is None or window_start is None or last < window_start:
+                if _is_dormant(act, window_start):
                     dormant.append(DormantCustomer(customer, act))
             dormant.sort(key=lambda d: (-d.lifetime.amount.amount, d.customer.name))
             ordered_before = sum(1 for d in dormant if d.lifetime.order_count)
 
             text = (query.search or "").strip().casefold()
-            matching = [d for d in dormant if not text or text in d.customer.name.casefold()
-                        or text in (d.customer.region or "").casefold() or d.customer.ruc.value.startswith(text)]
-            type_counts = {"all": len(matching)}
-            for d in matching:
-                kind = d.customer.customer_type or "other"
-                type_counts[kind] = type_counts.get(kind, 0) + 1
+            matching = [d for d in dormant if _matches(d.customer, text)]
+            type_counts = _count_types([d.customer for d in matching])
             if query.customer_type:
                 matching = [d for d in matching if d.customer.customer_type == query.customer_type]
 
             paging = query.paging
             chunk = matching[paging.offset:paging.offset + paging.per_page]
             return DormantCustomerList(
-                Page.of(chunk, len(matching), paging), as_of, len(found), len(dormant), ordered_before, type_counts
+                Page.of(chunk, len(matching), paging), as_of, len(found), len(dormant), ordered_before, type_counts,
+                len(found) - len(visible),
             )
+
+
+@dataclass(frozen=True)
+class DiscardCustomerCommand:
+    ruc: str
+    reason: str
+    note: str | None = None
+
+
+class DiscardCustomer:
+    """Descarta a un cliente dormido (cerró, cambió de datos o ya no es viable). Solo se descartan clientes sin
+    pedidos en 12 meses; queda registrado quién y cuándo, y se puede restaurar."""
+
+    def __init__(self, customers: CustomerReadRepository, discards: DiscardRepository, clock: Clock, uow: UnitOfWork) -> None:
+        self.customers, self.discards, self.clock, self.uow = customers, discards, clock, uow
+
+    def execute(self, command: DiscardCustomerCommand, user: SessionUser, scope: SalespersonScope) -> CustomerDiscard:
+        try:
+            reason = DiscardReason(command.reason)
+        except ValueError:
+            raise BusinessRuleError("Elige un motivo de descarte válido.", "invalid_discard_reason") from None
+        with self.uow:
+            customer = _customer_in_scope(self.customers, Ruc(command.ruc), scope)
+            if self.discards.active_for(customer.ruc) is not None:
+                raise ConflictError("Este cliente ya está descartado.", "customer_already_discarded")
+            as_of = _data_as_of(self.customers)
+            act = self.customers.activity([customer.ruc], date.min).get(customer.ruc, _empty_activity(customer.ruc))
+            if not _is_dormant(act, TwelveMonthWindow.start(as_of) if as_of else None):
+                raise BusinessRuleError("Solo se pueden descartar clientes sin pedidos en los últimos 12 meses.",
+                                        "customer_not_dormant")
+            discard = self.discards.add(CustomerDiscard(customer.ruc, reason, command.note, user.id, self.clock.today()))
+            self.uow.commit()
+            return discard
+
+
+class RestoreCustomer:
+    """Devuelve un cliente descartado a la lista de dormidos. El descarte queda en el historial."""
+
+    def __init__(self, customers: CustomerReadRepository, discards: DiscardRepository, clock: Clock, uow: UnitOfWork) -> None:
+        self.customers, self.discards, self.clock, self.uow = customers, discards, clock, uow
+
+    def execute(self, ruc: str, user: SessionUser, scope: SalespersonScope) -> None:
+        with self.uow:
+            customer = _customer_in_scope(self.customers, Ruc(ruc), scope)
+            discard = self.discards.active_for(customer.ruc)
+            if discard is None:
+                raise NotFoundError("Este cliente no está descartado.", "customer_not_discarded")
+            self.discards.save(replace(discard, restored_by=user.id, restored_on=self.clock.today()))
+            self.uow.commit()
+
+
+@dataclass(frozen=True)
+class DiscardedCustomersQuery:
+    search: str | None = None
+    reason: str | None = None
+    paging: Paging = Paging()
+
+
+@dataclass(frozen=True)
+class DiscardedCustomer:
+    customer: Customer
+    lifetime: CustomerActivity
+    discard: CustomerDiscard
+    discarded_by_name: str | None
+
+    @property
+    def ordered_after_discard(self) -> bool:
+        """Volvió a pedir después de descartarlo: conviene revisarlo y quizá restaurarlo."""
+        last = self.lifetime.last_order_date
+        return last is not None and last > self.discard.discarded_on
+
+
+@dataclass(frozen=True)
+class DiscardedCustomerList:
+    page: Page[DiscardedCustomer]
+    data_as_of: date | None
+    discarded_count: int  # vigentes de la cartera visible, sin filtros
+    reason_counts: dict[str, int]  # que coinciden con la búsqueda, por motivo; "all" los suma todos
+
+
+class ListDiscardedCustomers:
+    """Clientes descartados vigentes, del descarte más reciente al más antiguo."""
+
+    def __init__(self, customers: CustomerReadRepository, discards: DiscardRepository, users: UserDirectoryGateway,
+                 uow: UnitOfWork) -> None:
+        self.customers, self.discards, self.users, self.uow = customers, discards, users, uow
+
+    def execute(self, query: DiscardedCustomersQuery, scope: SalespersonScope) -> DiscardedCustomerList:
+        if query.reason:
+            try:
+                DiscardReason(query.reason)
+            except ValueError:
+                raise BusinessRuleError("Elige un motivo de descarte válido.", "invalid_discard_reason") from None
+        with self.uow:
+            as_of = _data_as_of(self.customers)
+            discards = self.discards.active()
+            found = [c for c in self.customers.all_in_scope(scope) if c.ruc in discards]
+            found.sort(key=lambda c: (discards[c.ruc].discarded_on, discards[c.ruc].id or 0), reverse=True)
+            text = (query.search or "").strip().casefold()
+            matching = [c for c in found if _matches(c, text)]
+            reason_counts = {"all": len(matching)}
+            for c in matching:
+                key = discards[c.ruc].reason.value
+                reason_counts[key] = reason_counts.get(key, 0) + 1
+            if query.reason:
+                matching = [c for c in matching if discards[c.ruc].reason.value == query.reason]
+
+            paging = query.paging
+            chunk = matching[paging.offset:paging.offset + paging.per_page]
+            lifetime = self.customers.activity([c.ruc for c in chunk], date.min) if chunk else {}
+            names = self.users.names(sorted({discards[c.ruc].discarded_by for c in chunk})) if chunk else {}
+            rows = [DiscardedCustomer(c, lifetime.get(c.ruc, _empty_activity(c.ruc)), discards[c.ruc],
+                                      names.get(discards[c.ruc].discarded_by)) for c in chunk]
+            return DiscardedCustomerList(Page.of(rows, len(matching), paging), as_of, len(found), reason_counts)
 
 
 # Factores propuestos en SIGUIENTES-PASOS.md (decisión pendiente #2 de gerencia). Cuando se decidan, irán a Ajustes.

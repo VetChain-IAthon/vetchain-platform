@@ -51,12 +51,15 @@ la app coincidan con las tablas de este documento, y `docs/openapi.json` se rege
 | GET | /customers/at-risk | En riesgo: pasaron más de 1,5 veces su ritmo de compra sin pedir (factores provisionales), por dinero en juego | M, S | ✅ |
 | GET | /customers/at-risk/follow-up | Por vendedor: clientes en riesgo y soles en juego según el último contacto (o sin contactar) | M, S | ✅ |
 | GET | /customers/dormant | Sin pedidos en 12 meses (incluye a los que nunca pidieron), por monto histórico. Filtros: search, customer_type, salesperson_code | M, S | ✅ |
+| GET | /customers/discarded | Dormidos descartados, del más reciente al más antiguo, con motivo, nota y quién descartó. Filtros: search, reason, salesperson_code | M, S | ✅ |
 | GET | /customers/{ruc} | Ficha con nivel y resumen de 12 meses | M, S | ✅ |
 | GET | /customers/{ruc}/orders | Historial de pedidos | M, S | ✅ |
 | GET | /customers/{ruc}/products | Qué compra y con qué frecuencia | M, S | ✅ |
 | GET | /customers/{ruc}/commercial-terms | Nivel, margen, descuento máximo y días de crédito | M, S | ✅ |
 | GET | /customers/{ruc}/contacts | Registro de contactos | M, S | ✅ |
 | POST | /customers/{ruc}/contacts | Registrar un contacto y su resultado | M, S | ✅ |
+| POST | /customers/{ruc}/discard | Descartar un cliente dormido. Motivo: business_closed, data_changed, not_viable u other (exige nota) | M, S | ✅ |
+| DELETE | /customers/{ruc}/discard | Restaurarlo: vuelve a la lista de dormidos; el descarte queda en el historial | M, S | ✅ |
 | GET | /customers/{ruc}/whatsapp-link | Enlace wa.me con el mensaje sugerido | M, S | ✅ |
 | GET | /customers/{ruc}/brief | Ficha para reunión (interna). Query: from, to, projection (month, semester, year). Proyección, ganancia, ofertas, guion y cobranza van como avisos | M | ✅ |
 
@@ -108,7 +111,9 @@ un aviso. Los saldos del kardex están por confirmar, no hay costos para rentabi
 ## Preguntas a los datos — `explanations`
 | Método | Ruta | Para qué | Roles | Estado |
 |---|---|---|---|---|
-| POST | /insights/questions | Pregunta en lenguaje natural; la respuesta sale de la base y lista sus fuentes | M | ⏳ |
+| POST | /insights/questions | Pregunta en lenguaje natural; la respuesta sale de la base y lista sus fuentes | M | ✅ |
+
+Gemini solo elige una consulta de la lista cerrada (`prompts/insight_planner.md`) y redacta sobre las filas agregadas que devuelve `reports.public.run_allowed_query`. Hoy responden `sales_by_month`, `sales_by_family`, `top_products` y `salesperson_performance`; las demás devuelven 400 `query_not_available`. Una pregunta con RUC, DNI, correo, celular o nombre de cliente se rechaza (400 `identifies_customer`) antes de enviarse. Sin `GEMINI_API_KEY`: 400 `ai_unavailable`.
 
 ## Planificación de importación — `import_planning`
 | Método | Ruta | Para qué | Roles | Estado |
