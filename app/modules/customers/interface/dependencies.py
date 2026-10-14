@@ -25,6 +25,10 @@ def get_list_customers(db: Session = Depends(get_db)) -> uc.ListCustomers:
     return uc.ListCustomers(_customers(db), SettingsPublicGateway(), _uow(db))
 
 
+def get_list_dormant_customers(db: Session = Depends(get_db)) -> uc.ListDormantCustomers:
+    return uc.ListDormantCustomers(_customers(db), _uow(db))
+
+
 def get_get_customer(db: Session = Depends(get_db)) -> uc.GetCustomer:
     return uc.GetCustomer(_customers(db), SettingsPublicGateway(), _uow(db))
 

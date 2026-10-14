@@ -404,6 +404,126 @@
         }
       }
     },
+    "/api/v1/customers/dormant": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "List Dormant Customers",
+        "description": "Clientes sin pedidos en los últimos 12 meses (incluye a los que nunca pidieron), por monto histórico.",
+        "operationId": "list_dormant_customers_api_v1_customers_dormant_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Nombre, departamento o inicio del RUC",
+              "title": "Search"
+            },
+            "description": "Nombre, departamento o inicio del RUC"
+          },
+          {
+            "name": "customer_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "company",
+                    "person"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Customer Type"
+            }
+          },
+          {
+            "name": "salesperson_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 3
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Solo gerencia; al vendedor se le fuerza el suyo",
+              "title": "Salesperson Code"
+            },
+            "description": "Solo gerencia; al vendedor se le fuerza el suyo"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DormantCustomerPageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/customers/{ruc}": {
       "get": {
         "tags": [
@@ -3269,6 +3389,172 @@
           "warnings"
         ],
         "title": "DashboardSummaryOut"
+      },
+      "DormantCustomerOut": {
+        "properties": {
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "customer_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Type",
+            "description": "company | person | other"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
+          },
+          "order_count": {
+            "type": "integer",
+            "title": "Order Count",
+            "description": "Pedidos en todo el historial"
+          },
+          "lifetime_amount": {
+            "type": "number",
+            "title": "Lifetime Amount",
+            "description": "Monto histórico de pedidos, sin IGV, solo veterinarios"
+          },
+          "last_order_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Order Date",
+            "description": "null si no tiene pedidos en los archivos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruc",
+          "name",
+          "customer_type",
+          "region",
+          "order_count",
+          "lifetime_amount",
+          "last_order_date"
+        ],
+        "title": "DormantCustomerOut"
+      },
+      "DormantCustomerPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DormantCustomerOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          },
+          "customer_count": {
+            "type": "integer",
+            "title": "Customer Count",
+            "description": "Clientes de la cartera visible"
+          },
+          "dormant_count": {
+            "type": "integer",
+            "title": "Dormant Count",
+            "description": "Sin pedidos en los 12 meses, antes de buscar o filtrar"
+          },
+          "ordered_before_count": {
+            "type": "integer",
+            "title": "Ordered Before Count",
+            "description": "Dormidos que sí tuvieron pedidos antes"
+          },
+          "type_counts": {
+            "$ref": "#/components/schemas/DormantTypeCountsOut",
+            "description": "Dormidos que coinciden con la búsqueda, por tipo"
+          },
+          "data_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data As Of",
+            "description": "Fecha del último pedido cargado: la ventana de 12 meses termina aquí"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "per_page",
+          "customer_count",
+          "dormant_count",
+          "ordered_before_count",
+          "type_counts",
+          "data_as_of"
+        ],
+        "title": "DormantCustomerPageOut"
+      },
+      "DormantTypeCountsOut": {
+        "properties": {
+          "all": {
+            "type": "integer",
+            "title": "All"
+          },
+          "company": {
+            "type": "integer",
+            "title": "Company"
+          },
+          "person": {
+            "type": "integer",
+            "title": "Person"
+          }
+        },
+        "type": "object",
+        "required": [
+          "all",
+          "company",
+          "person"
+        ],
+        "title": "DormantTypeCountsOut"
       },
       "FunnelReportOut": {
         "properties": {

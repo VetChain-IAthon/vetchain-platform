@@ -15,6 +15,7 @@ from app.modules.customers.interface.schemas import (
     CustomerDetailOut,
     CustomerListItemOut,
     CustomerPageOut,
+    DormantCustomerPageOut,
     OrderOut,
     OrderPageOut,
     ProductPurchaseOut,
@@ -48,6 +49,21 @@ def list_customers(
         total_amount_12m=result.total_amount_12m.amount, data_as_of=result.data_as_of,
         levels_configured=result.levels_configured,
     )
+
+
+@router.get("/customers/dormant", response_model=DormantCustomerPageOut)
+def list_dormant_customers(
+    search: str | None = Query(None, max_length=100, description="Nombre, departamento o inicio del RUC"),
+    customer_type: Literal["company", "person"] | None = None,
+    salesperson_code: str | None = Query(None, max_length=3, description="Solo gerencia; al vendedor se le fuerza el suyo"),
+    page: int = Page,
+    per_page: int = PerPage,
+    user: SessionUser = Depends(any_role),
+    use_case: uc.ListDormantCustomers = Depends(deps.get_list_dormant_customers),
+):
+    """Clientes sin pedidos en los últimos 12 meses (incluye a los que nunca pidieron), por monto histórico."""
+    query = uc.DormantCustomersQuery(search, customer_type, Paging(page, per_page))
+    return DormantCustomerPageOut.from_result(use_case.execute(query, uc.scope_for(user, salesperson_code)))
 
 
 @router.get("/customers/{ruc}", response_model=CustomerDetailOut)

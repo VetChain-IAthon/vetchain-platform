@@ -110,6 +110,72 @@ class ListCustomers:
 
 
 @dataclass(frozen=True)
+class DormantCustomersQuery:
+    search: str | None = None
+    customer_type: str | None = None  # company | person
+    paging: Paging = Paging()
+
+
+@dataclass(frozen=True)
+class DormantCustomer:
+    customer: Customer
+    lifetime: CustomerActivity  # historial completo: pedidos, monto y última compra
+
+
+@dataclass(frozen=True)
+class DormantCustomerList:
+    page: Page[DormantCustomer]
+    data_as_of: date | None
+    customer_count: int  # cartera visible, sin filtros
+    dormant_count: int  # sin pedidos en 12 meses, sin filtros
+    ordered_before_count: int  # de los dormidos, los que sí tienen pedidos antes
+    type_counts: dict[str, int]  # dormidos que coinciden con la búsqueda, por tipo; "all" los suma todos
+
+
+class ListDormantCustomers:
+    """Clientes sin pedidos en la ventana de 12 meses, ordenados por monto histórico (sin IGV, solo veterinarios).
+
+    Incluye a los que nunca tuvieron pedidos en los archivos. No es el estado «dormido» por ritmo de compra de las
+    alertas, que espera los factores de gerencia: aquí basta con no haber pedido en 12 meses.
+    """
+
+    def __init__(self, customers: CustomerReadRepository, uow: UnitOfWork) -> None:
+        self.customers, self.uow = customers, uow
+
+    def execute(self, query: DormantCustomersQuery, scope: SalespersonScope) -> DormantCustomerList:
+        with self.uow:
+            as_of = _data_as_of(self.customers)
+            found = self.customers.all_in_scope(scope)
+            lifetime = self.customers.activity([c.ruc for c in found], date.min) if found else {}
+            window_start = TwelveMonthWindow.start(as_of) if as_of else None
+
+            dormant = []
+            for customer in found:
+                act = lifetime.get(customer.ruc, _empty_activity(customer.ruc))
+                last = act.last_order_date
+                if last is None or window_start is None or last < window_start:
+                    dormant.append(DormantCustomer(customer, act))
+            dormant.sort(key=lambda d: (-d.lifetime.amount.amount, d.customer.name))
+            ordered_before = sum(1 for d in dormant if d.lifetime.order_count)
+
+            text = (query.search or "").strip().casefold()
+            matching = [d for d in dormant if not text or text in d.customer.name.casefold()
+                        or text in (d.customer.region or "").casefold() or d.customer.ruc.value.startswith(text)]
+            type_counts = {"all": len(matching)}
+            for d in matching:
+                kind = d.customer.customer_type or "other"
+                type_counts[kind] = type_counts.get(kind, 0) + 1
+            if query.customer_type:
+                matching = [d for d in matching if d.customer.customer_type == query.customer_type]
+
+            paging = query.paging
+            chunk = matching[paging.offset:paging.offset + paging.per_page]
+            return DormantCustomerList(
+                Page.of(chunk, len(matching), paging), as_of, len(found), len(dormant), ordered_before, type_counts
+            )
+
+
+@dataclass(frozen=True)
 class CustomerDetail:
     standing: CustomerStanding
     lifetime: CustomerActivity
