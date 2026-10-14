@@ -24,13 +24,18 @@ def test_stage_review_and_confirm(client, manager):
     assert staged.status_code == 201
     body = staged.json()
     assert body["status"] == "staged" and body["rows_read"] == 3 and body["valid_rows"] == 2
-    assert body["errors"] == [{"line": 3, "message": "falta name"}]  # línea 3 del archivo (la 1 son los encabezados)
+    assert body["errors"] == [{"line": 3, "message": "Falta nombre: es obligatorio."}]  # la línea 1 son los encabezados
+    preview = body["preview"]
+    assert preview["columns"] == ["codigo", "nombre", "ubicacion", "activo"]
+    assert [(r["line"], r["values"][0], r["status"]) for r in preview["rows"]] == [(2, "003", "new"), (3, "004", "error"), (4, "001", "update")]
+    assert preview["new_rows"] == 1 and preview["updated_rows"] == 1
     # Aún no se aplica: el vendedor 003 no existe
     names = {s["code"]: s["name"] for s in client.get("/api/v1/reports/salespeople", headers=manager).json()["items"]}
     assert "003" not in names
 
     confirmed = client.patch(f"/api/v1/data-imports/{body['id']}", headers=manager, json={"action": "confirm"}).json()
     assert confirmed["status"] == "confirmed" and confirmed["rows_loaded"] == 2
+    assert client.get(f"/api/v1/data-imports/{body['id']}", headers=manager).json()["preview"] is None
     again = client.patch(f"/api/v1/data-imports/{body['id']}", headers=manager, json={"action": "cancel"})
     assert again.status_code == 409 and again.json()["error"]["code"] == "import_not_staged"
 

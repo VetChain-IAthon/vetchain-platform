@@ -57,15 +57,36 @@ class DataImportOut(BaseModel):
     errors: list[RowErrorOut] = Field(description="Hasta 200 errores por línea")
     created_at: datetime
     decided_at: datetime | None
+    preview: "ImportPreviewOut | None" = Field(None, description="Solo mientras la carga está en revisión")
 
     @classmethod
-    def from_domain(cls, item: DataImport) -> "DataImportOut":
+    def from_domain(cls, item: DataImport, preview: "uc.ImportPreview | None" = None) -> "DataImportOut":
         return cls(id=item.id, source=item.source.value, file_name=item.file_name, origin=item.origin.value,
                    status=item.status.value, rows_read=item.rows_read, rows_with_error=item.rows_with_error,
                    valid_rows=item.valid_rows, rows_loaded=item.rows_loaded,
                    # El validador cuenta desde la primera fila de datos; en el archivo es una línea más (encabezados).
                    errors=[RowErrorOut(line=e.line + 1, message=e.message) for e in item.errors],
-                   created_at=item.created_at, decided_at=item.decided_at)
+                   created_at=item.created_at, decided_at=item.decided_at,
+                   preview=ImportPreviewOut.from_result(preview) if preview else None)
+
+
+class PreviewRowOut(BaseModel):
+    line: int
+    values: list[str]
+    status: Literal["new", "update", "error"]
+    message: str | None
+
+
+class ImportPreviewOut(BaseModel):
+    columns: list[str] = Field(description="Encabezados de las columnas que identifican cada fila")
+    rows: list[PreviewRowOut] = Field(description="Hasta 500 filas, en el orden del archivo")
+    new_rows: int = Field(description="Filas válidas que se agregarán")
+    updated_rows: int = Field(description="Filas válidas que actualizan un registro existente")
+
+    @classmethod
+    def from_result(cls, preview: uc.ImportPreview) -> "ImportPreviewOut":
+        return cls(columns=list(preview.columns), new_rows=preview.new_rows, updated_rows=preview.updated_rows,
+                   rows=[PreviewRowOut(line=r.line, values=list(r.values), status=r.status, message=r.message) for r in preview.rows])
 
 
 class DataImportPageOut(BaseModel):
@@ -77,3 +98,6 @@ class DataImportPageOut(BaseModel):
 
 class DataImportDecisionIn(BaseModel):
     action: Literal["confirm", "cancel"]
+
+
+DataImportOut.model_rebuild()

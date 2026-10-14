@@ -43,6 +43,10 @@ class SourceLoader(Protocol):
         """(filas leídas, errores por línea; la línea 1 es la primera fila de datos). No escribe nada."""
         ...
 
+    def existing_lines(self, source: SourceName, rows: list[list[str]]) -> set[int]:
+        """Líneas (desde 1, primera fila de datos) cuya clave ya existe en la base: al confirmar se actualizan."""
+        ...
+
     def load(self, source: SourceName, rows: list[list[str]]) -> int:
         """Actualiza e inserta; nunca borra. Devuelve las filas escritas."""
         ...

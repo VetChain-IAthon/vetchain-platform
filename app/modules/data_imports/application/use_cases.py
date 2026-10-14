@@ -9,7 +9,7 @@ from datetime import date
 
 from app.core.application import Page, Paging, SessionUser
 from app.core.domain import BusinessRuleError, Clock, DataOrigin, NotFoundError, UnitOfWork
-from app.modules.data_imports.domain.entities import DataImport
+from app.modules.data_imports.domain.entities import DataImport, ImportStatus
 from app.modules.data_imports.domain.ports import DataImportRepository, SourceLoader, SourceStats, StagingStore
 from app.modules.data_imports.domain.sources import LOAD_ORDER, SOURCES, DataSource, SourceName
 
@@ -89,6 +89,53 @@ class StageImport:
             self.staging.put(data_import.id, data_rows)
             self.uow.commit()
             return data_import
+
+
+MAX_PREVIEW_ROWS = 500
+
+
+@dataclass(frozen=True)
+class PreviewRow:
+    line: int  # línea del archivo (la 1 son los encabezados)
+    values: tuple[str, ...]
+    status: str  # new · update · error
+    message: str | None = None
+
+
+@dataclass(frozen=True)
+class ImportPreview:
+    columns: tuple[str, ...]
+    rows: tuple[PreviewRow, ...]
+    new_rows: int
+    updated_rows: int
+
+
+class PreviewImport:
+    """Qué hará la carga fila por fila mientras está en revisión: agregar, actualizar o descartar por error."""
+
+    def __init__(self, imports: DataImportRepository, staging: StagingStore, loader: SourceLoader, uow: UnitOfWork) -> None:
+        self.imports, self.staging, self.loader, self.uow = imports, staging, loader, uow
+
+    def execute(self, import_id: int) -> ImportPreview | None:
+        with self.uow:
+            data_import = _get(self.imports, import_id)
+            if data_import.status is not ImportStatus.STAGED:
+                return None
+            source = SOURCES[data_import.source]
+            rows = self.staging.take(import_id)
+            errors = {e.line: e.message for e in data_import.errors}
+            existing = self.loader.existing_lines(source.name, rows)
+            preview, new, updated = [], 0, 0
+            for line, row in enumerate(rows, start=1):
+                if line in errors or (len(errors) >= MAX_STORED_ERRORS and line > max(errors)):
+                    status = "error"
+                elif line in existing:
+                    status, updated = "update", updated + 1
+                else:
+                    status, new = "new", new + 1
+                if len(preview) < MAX_PREVIEW_ROWS:
+                    preview.append(PreviewRow(line + 1, source.preview_values(row), status, errors.get(line)))
+            return ImportPreview(source.preview_columns, tuple(preview), new, updated)
 
 
 class ListImports:

@@ -2761,7 +2761,7 @@
           "carga de datos"
         ],
         "summary": "Get Import",
-        "description": "Revisión de una carga: filas leídas, válidas y errores por línea.",
+        "description": "Revisión de una carga: filas leídas, válidas, errores por línea y, en revisión, qué pasará con cada fila.",
         "operationId": "get_import_api_v1_data_imports__import_id__get",
         "security": [
           {
@@ -4459,6 +4459,17 @@
               }
             ],
             "title": "Decided At"
+          },
+          "preview": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImportPreviewOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo mientras la carga está en revisión"
           }
         },
         "type": "object",
@@ -4895,6 +4906,44 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "ImportPreviewOut": {
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Columns",
+            "description": "Encabezados de las columnas que identifican cada fila"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/PreviewRowOut"
+            },
+            "type": "array",
+            "title": "Rows",
+            "description": "Hasta 500 filas, en el orden del archivo"
+          },
+          "new_rows": {
+            "type": "integer",
+            "title": "New Rows",
+            "description": "Filas válidas que se agregarán"
+          },
+          "updated_rows": {
+            "type": "integer",
+            "title": "Updated Rows",
+            "description": "Filas válidas que actualizan un registro existente"
+          }
+        },
+        "type": "object",
+        "required": [
+          "columns",
+          "rows",
+          "new_rows",
+          "updated_rows"
+        ],
+        "title": "ImportPreviewOut"
+      },
       "KpiOut": {
         "properties": {
           "code": {
@@ -5324,6 +5373,49 @@
           "warning"
         ],
         "title": "PeriodOut"
+      },
+      "PreviewRowOut": {
+        "properties": {
+          "line": {
+            "type": "integer",
+            "title": "Line"
+          },
+          "values": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Values"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "update",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "line",
+          "values",
+          "status",
+          "message"
+        ],
+        "title": "PreviewRowOut"
       },
       "PricePointOut": {
         "properties": {

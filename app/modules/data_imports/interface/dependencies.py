@@ -33,3 +33,8 @@ def get_get_import(db: Session = Depends(get_db)) -> uc.GetImport:
 def get_decide_import(db: Session = Depends(get_db)) -> uc.DecideImport:
     repo = SqlDataImportRepository(db)
     return uc.DecideImport(repo, repo, DefontanaSourceLoader(db), SystemClock(), _uow(db))
+
+
+def get_preview_import(db: Session = Depends(get_db)) -> uc.PreviewImport:
+    repo = SqlDataImportRepository(db)
+    return uc.PreviewImport(repo, repo, DefontanaSourceLoader(db), _uow(db))

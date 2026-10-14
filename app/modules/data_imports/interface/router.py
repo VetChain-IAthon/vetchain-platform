@@ -33,10 +33,12 @@ async def stage_import(
     origin: Literal["real", "synthetic", "simulated"] = Form("real"),
     user: SessionUser = Depends(manager),
     use_case: uc.StageImport = Depends(deps.get_stage_import),
+    preview: uc.PreviewImport = Depends(deps.get_preview_import),
 ):
     """Sube un CSV: se revisan los encabezados y se valida cada fila. Queda en revisión; no se aplica todavía."""
     content = await file.read(uc.MAX_FILE_BYTES + 1)
-    return DataImportOut.from_domain(use_case.execute(uc.StageImportCommand(source, file.filename or "archivo.csv", content, origin), user))
+    staged = use_case.execute(uc.StageImportCommand(source, file.filename or "archivo.csv", content, origin), user)
+    return DataImportOut.from_domain(staged, preview.execute(staged.id))
 
 
 @router.get("/data-imports", response_model=DataImportPageOut)
@@ -51,9 +53,12 @@ def list_imports(
 
 
 @router.get("/data-imports/{import_id}", response_model=DataImportOut)
-def get_import(import_id: int, _: SessionUser = Depends(manager), use_case: uc.GetImport = Depends(deps.get_get_import)):
-    """Revisión de una carga: filas leídas, válidas y errores por línea."""
-    return DataImportOut.from_domain(use_case.execute(import_id))
+def get_import(
+    import_id: int, _: SessionUser = Depends(manager), use_case: uc.GetImport = Depends(deps.get_get_import),
+    preview: uc.PreviewImport = Depends(deps.get_preview_import),
+):
+    """Revisión de una carga: filas leídas, válidas, errores por línea y, en revisión, qué pasará con cada fila."""
+    return DataImportOut.from_domain(use_case.execute(import_id), preview.execute(import_id))
 
 
 @router.patch("/data-imports/{import_id}", response_model=DataImportOut)
