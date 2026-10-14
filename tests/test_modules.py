@@ -7,14 +7,14 @@ def test_health_needs_no_session(client: TestClient):
 
 
 def test_pending_routes_answer_501_after_auth_and_role(client, login):
-    assert client.get("/api/v1/customers").status_code == 401
+    assert client.get("/api/v1/alerts").status_code == 401
     seller = login("salesperson")
-    response = client.get("/api/v1/customers", headers=seller)
+    response = client.get("/api/v1/alerts", headers=seller)
     assert response.status_code == 501
     assert response.json()["error"]["code"] == "not_implemented"
     assert client.get("/api/v1/reports/kpis", headers=seller).status_code == 403  # solo gerencia
     manager = login("manager")
-    assert client.get("/api/v1/customers/20111111111/orders", headers=manager).status_code == 501
+    assert client.get("/api/v1/customers/20111111111/brief", headers=manager).status_code == 501
     assert client.patch("/api/v1/import-suggestions/1", headers=manager).status_code == 501
 
 

@@ -8,8 +8,10 @@ from app.core.application import Page, Paging
 from app.core.domain import Money, Ruc
 from app.infrastructure.db.repositories import queries
 from app.infrastructure.db.source_models import Customer as CustomerRow
-from app.modules.customers.domain.entities import Customer, CustomerActivity, OrderSummary, ProductPurchase
-from app.modules.customers.domain.value_objects import SalespersonScope
+from app.infrastructure.db.source_models import Order as OrderRow
+from app.modules.customers.domain.entities import Contact, Customer, CustomerActivity, OrderSummary, ProductPurchase
+from app.modules.customers.domain.value_objects import ContactOutcome, SalespersonScope
+from app.modules.customers.infrastructure.orm import ContactRow
 
 
 def _to_customer(row: CustomerRow) -> Customer:
@@ -37,10 +39,7 @@ class SqlAlchemyCustomerReadRepository:
         return None if row is None else _to_customer(row)
 
     def search(self, text: str | None, scope: SalespersonScope, paging: Paging) -> Page[Customer]:
-        filters = self._scope_filters(scope)
-        text = (text or "").strip()
-        if text:
-            filters.append(or_(CustomerRow.name.ilike(f"%{text}%"), CustomerRow.ruc.like(f"{text}%")))
+        filters = self._scope_filters(scope) + self._text_filters(text)
         total = self._session.scalar(select(func.count()).select_from(CustomerRow).where(*filters))
         rows = self._session.scalars(
             select(CustomerRow).where(*filters).order_by(CustomerRow.name, CustomerRow.ruc)
@@ -48,9 +47,18 @@ class SqlAlchemyCustomerReadRepository:
         )
         return Page.of([_to_customer(row) for row in rows], total, paging)
 
-    def all_in_scope(self, scope: SalespersonScope) -> list[Customer]:
-        rows = self._session.scalars(select(CustomerRow).where(*self._scope_filters(scope)).order_by(CustomerRow.ruc))
+    def all_in_scope(self, scope: SalespersonScope, text: str | None = None) -> list[Customer]:
+        filters = self._scope_filters(scope) + self._text_filters(text)
+        rows = self._session.scalars(select(CustomerRow).where(*filters).order_by(CustomerRow.ruc))
         return [_to_customer(row) for row in rows]
+
+    def latest_order_date(self) -> date | None:
+        return self._session.scalar(select(func.max(OrderRow.order_date)))
+
+    def last_order_dates(self, rucs: list[Ruc]) -> dict[Ruc, date]:
+        wanted = {ruc.value: ruc for ruc in rucs}
+        rows = queries.last_order_per_customer(self._session, exclude_statuses=self._exclude)
+        return {wanted[row["ruc"]]: row["last_order_date"] for row in rows if row["ruc"] in wanted}
 
     def activity(self, rucs: list[Ruc], since: date) -> dict[Ruc, CustomerActivity]:
         found = queries.customer_activity(self._session, [ruc.value for ruc in rucs], since, self._exclude)
@@ -90,5 +98,36 @@ class SqlAlchemyCustomerReadRepository:
         ]
 
     @staticmethod
+    def _text_filters(text: str | None) -> list:
+        text = (text or "").strip()
+        return [or_(CustomerRow.name.ilike(f"%{text}%"), CustomerRow.ruc.like(f"{text}%"))] if text else []
+
+    @staticmethod
     def _scope_filters(scope: SalespersonScope) -> list:
         return [] if scope.is_everyone else [CustomerRow.salesperson_code == scope.salesperson_code]
+
+
+class SqlAlchemyContactRepository:
+    """Implementa ContactRepository sobre la tabla contacts (propia de la app)."""
+
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def add(self, contact: Contact) -> Contact:
+        row = ContactRow(ruc=contact.ruc.value, user_id=contact.user_id, outcome=contact.outcome.value, contact_date=contact.contact_date)
+        self._session.add(row)
+        self._session.flush()
+        return _to_contact(row)
+
+    def list_for(self, ruc: Ruc, paging: Paging) -> Page[Contact]:
+        filters = [ContactRow.ruc == ruc.value]
+        total = self._session.scalar(select(func.count()).select_from(ContactRow).where(*filters))
+        rows = self._session.scalars(
+            select(ContactRow).where(*filters).order_by(ContactRow.contact_date.desc(), ContactRow.id.desc())
+            .offset(paging.offset).limit(paging.per_page)
+        )
+        return Page.of([_to_contact(row) for row in rows], total, paging)
+
+
+def _to_contact(row: ContactRow) -> Contact:
+    return Contact(Ruc(row.ruc), row.user_id, ContactOutcome(row.outcome), row.contact_date, id=row.id)

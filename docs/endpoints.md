@@ -47,25 +47,35 @@ la app coincidan con las tablas de este documento, y `docs/openapi.json` se rege
 ## Clientes — `customers`
 | Método | Ruta | Para qué | Roles | Estado |
 |---|---|---|---|---|
-| GET | /customers | Lista. Filtros: level, status (active, at_risk, dormant), search, salesperson_code | M, S | ⏳ |
-| GET | /customers/{ruc} | Ficha con nivel y resumen de 12 meses | M, S | ⏳ |
-| GET | /customers/{ruc}/orders | Historial de pedidos | M, S | ⏳ |
-| GET | /customers/{ruc}/products | Qué compra y con qué frecuencia | M, S | ⏳ |
-| GET | /customers/{ruc}/commercial-terms | Nivel, margen, descuento máximo y días de crédito | M, S | ⏳ |
-| GET | /customers/{ruc}/contacts | Registro de contactos | M, S | ⏳ |
-| POST | /customers/{ruc}/contacts | Registrar un contacto y su resultado | M, S | ⏳ |
-| GET | /customers/{ruc}/whatsapp-link | Enlace wa.me con el mensaje sugerido | M, S | ⏳ |
+| GET | /customers | Lista por monto de 12 meses. Filtros: level, search, salesperson_code (status llega con las alertas) | M, S | ✅ |
+| GET | /customers/{ruc} | Ficha con nivel y resumen de 12 meses | M, S | ✅ |
+| GET | /customers/{ruc}/orders | Historial de pedidos | M, S | ✅ |
+| GET | /customers/{ruc}/products | Qué compra y con qué frecuencia | M, S | ✅ |
+| GET | /customers/{ruc}/commercial-terms | Nivel, margen, descuento máximo y días de crédito | M, S | ✅ |
+| GET | /customers/{ruc}/contacts | Registro de contactos | M, S | ✅ |
+| POST | /customers/{ruc}/contacts | Registrar un contacto y su resultado | M, S | ✅ |
+| GET | /customers/{ruc}/whatsapp-link | Enlace wa.me con el mensaje sugerido | M, S | ✅ |
 | GET | /customers/{ruc}/brief | Ficha para reunión. Query: from, to, projection (month, semester, year) | M | ⏳ |
+
+Fecha de corte: la ventana de 12 meses termina en el último pedido cargado (`data_as_of`), no en la fecha de hoy,
+porque los CSV son una foto. `level` es `null` (y `levels_configured` es `false`) mientras gerencia no defina los
+umbrales; filtrar por nivel o pedir `commercial-terms` sin umbrales responde 400 `thresholds_not_configured`.
+Un vendedor solo ve su cartera: pedir un cliente ajeno responde 403 `outside_portfolio`.
 
 ## Productos y cotizaciones — `quotations`
 | Método | Ruta | Para qué | Roles | Estado |
 |---|---|---|---|---|
-| GET | /products | Buscar productos. Filtros: search, family | M, S | ⏳ |
-| GET | /products/{code} | Un producto con su precio de referencia | M, S | ⏳ |
-| POST | /quotation-previews | Calcular totales, IGV y margen sin guardar | M, S | ⏳ |
-| GET | /quotations | Lista. Filtros: status, ruc, from, to | M, S | ⏳ |
-| POST | /quotations | Emitir. Si requiere aprobación, solo un M puede confirmarla (`approval_confirmed`) | M, S | ⏳ |
-| GET | /quotations/{quotation_id} | Detalle con líneas | M, S | ⏳ |
+| GET | /products | Buscar productos veterinarios activos. Filtros: search, family; paginado | M, S | ✅ |
+| GET | /products/{code} | Un producto con su último precio pagado sin IGV (estimated; null si falta) | M, S | ✅ |
+| POST | /quotation-previews | Calcular totales, IGV y margen sin guardar; exige reglas en Ajustes | M, S | ✅ |
+| GET | /quotations | Lista paginada. Filtros: status, ruc, from, to; cartera forzada para S | M, S | ✅ |
+| POST | /quotations | Emitir. Si requiere aprobación, solo un M puede confirmarla (`approval_confirmed` y nota) | M, S | ✅ |
+| GET | /quotations/{quotation_id} | Detalle con líneas, limitado a la cartera para S | M, S | ✅ |
+
+Solo se cotizan productos veterinarios activos con un precio pagado no bonificado en un pedido no cancelado.
+El precio de referencia es el importe de la última línea dividido entre su cantidad y lleva origen `estimated`.
+Sin precio, la vista previa responde `reference_price_unavailable`; sin costos, `margin_pct=null` y aviso `no_cost_data`.
+La emisión recalcula la vista previa, no confía en importes enviados por la web. Las cotizaciones emitidas son inmutables.
 
 ## Predicción — `prediction`
 | Método | Ruta | Para qué | Roles | Estado |
@@ -75,17 +85,22 @@ la app coincidan con las tablas de este documento, y `docs/openapi.json` se rege
 ## Panel y reportes — `reports`
 | Método | Ruta | Para qué | Roles | Estado |
 |---|---|---|---|---|
-| GET | /dashboard/summary | Resumen semanal y cifras principales (incluye pedidos por mes y seguimiento de alertas) | M | ⏳ |
-| GET | /reports | Catálogo de reportes con el origen de sus datos | M | ⏳ |
-| GET | /reports/kpis | Los KPIs con su estado | M | ⏳ |
-| GET | /reports/sales | Pedidos por mes, producto y categoría; precio pagado frente a referencia | M | ⏳ |
-| GET | /reports/customers | Concentración, maestro de clientes, en riesgo y dormidos | M | ⏳ |
-| GET | /reports/stock | Estado del stock, sobrestock y quiebres | M | ⏳ |
-| GET | /reports/receivables | Deuda por antigüedad y nivel (estimada) | M | ⏳ |
-| GET | /reports/salespeople | Pedidos de 12 meses y seguimiento de alertas por vendedor | M | ⏳ |
-| GET | /reports/funnel | Embudo: alertas, contactos, cotizaciones, convertidas y monto recuperado | M | ⏳ |
+| GET | /dashboard/summary | Monto y pedidos de 12 meses, ticket, clientes, concentración y meses; alertas con aviso | M | ✅ |
+| GET | /reports | Catálogo de reportes con el origen de sus datos | M | ✅ |
+| GET | /reports/kpis | Valores disponibles sin metas ni estados inventados | M | ✅ parcial |
+| GET | /reports/sales | Pedidos por mes, producto y categoría; margen sin datos de costos | M | ✅ |
+| GET | /reports/customers | Concentración, maestro de clientes y top; riesgo y dormancia pendientes de reglas | M | ✅ parcial |
+| GET | /reports/stock | Saldo por producto al último cierre, con aviso de campo sin confirmar y sin lotes | M | ✅ parcial |
+| GET | /reports/receivables | Aviso: cobros y pedidos no se pueden enlazar | M | ✅ aviso |
+| GET | /reports/salespeople | Monto, pedidos y clientes de 12 meses por vendedor; alertas pendientes | M | ✅ parcial |
+| GET | /reports/funnel | Estructura sin cifras hasta definir alertas y conversión | M | ✅ aviso |
 
-Todos aceptan `?from=&to=`.
+Las rutas con cifras aceptan `?from=&to=`; el catálogo `/reports` no necesita fechas.
+
+Sin fechas, los 12 meses terminan en el último pedido cargado (`data_as_of`). Se excluyen líneas bonificadas,
+productos no veterinarios y pedidos cancelados (C); esta regla de estados es provisional. Los montos son de pedidos,
+sin IGV: no acreditan venta facturada. Cada cifra declara `data_origin=real`; si faltan datos se devuelve `null` y
+un aviso. Los saldos del kardex están por confirmar, no hay costos para rentabilidad ni relación entre cobros y pedidos.
 
 ## Preguntas a los datos — `explanations`
 | Método | Ruta | Para qué | Roles | Estado |

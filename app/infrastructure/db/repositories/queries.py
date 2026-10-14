@@ -148,7 +148,7 @@ def monthly_sales(
         func.count(func.distinct(Order.order_no)).label("order_count"),
         func.sum(OrderLine.line_total).label("amount"),
         func.sum(case((Order.is_dispatched.is_(True), OrderLine.line_total), else_=0)).label("dispatched_amount"),
-    ).where(*_date_filters(Order.order_date, date_from, date_to))
+    ).where(*_date_filters(Order.order_date, date_from, date_to), OrderLine.is_bonus.is_(False))
     query = query.where(_counted(exclude_statuses))
     query = query.group_by(month).order_by(month)
     return [dict(row._mapping) for row in session.execute(query)]
@@ -240,7 +240,8 @@ def sales_by_category(
     query = (
         _core_lines()
         .add_columns(Product.category_code, func.sum(OrderLine.line_total).label("amount"))
-        .where(*_date_filters(Order.order_date, date_from, date_to), _counted(exclude_statuses))
+        .where(*_date_filters(Order.order_date, date_from, date_to), _counted(exclude_statuses),
+               OrderLine.is_bonus.is_(False))
         .group_by(Product.category_code)
         .order_by(desc("amount"), Product.category_code)
     )
@@ -257,7 +258,8 @@ def amounts_by_customer(
     query = (
         _core_lines()
         .add_columns(Order.ruc, func.sum(OrderLine.line_total).label("amount"))
-        .where(*_date_filters(Order.order_date, date_from, date_to), _counted(exclude_statuses))
+        .where(*_date_filters(Order.order_date, date_from, date_to), _counted(exclude_statuses),
+               OrderLine.is_bonus.is_(False))
         .group_by(Order.ruc)
         .order_by(desc("amount"), Order.ruc)
     )

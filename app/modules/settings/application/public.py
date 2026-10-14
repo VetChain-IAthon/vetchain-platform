@@ -7,8 +7,8 @@ from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from decimal import Decimal
 
-from app.core.domain import UnitOfWork
-from app.modules.settings.application.use_cases import ClassifyLevel, GetCompleteLevelRules, GetPricing
+from app.core.domain import NotFoundError, UnitOfWork
+from app.modules.settings.application.use_cases import ClassifyLevel, GetCompleteLevelRules, GetLevelThresholds, GetPricing
 from app.modules.settings.domain.ports import SettingsRepository
 
 Scope = Callable[[], AbstractContextManager[tuple[SettingsRepository, UnitOfWork]]]
@@ -36,6 +36,12 @@ class LevelRule:
     credit_days: int
 
 
+@dataclass(frozen=True)
+class Thresholds:
+    min_amount_b: Decimal
+    min_amount_a: Decimal
+
+
 def _open():
     if _scope is None:
         raise RuntimeError("settings no está configurado: falta importar app.modules.settings.interface.")
@@ -56,6 +62,16 @@ def get_level_rules() -> list[LevelRule]:
     return [
         LevelRule(rule.level.value, rule.max_discount.value, rule.margin.value, rule.credit_days) for rule in rules.rules
     ]
+
+
+def get_level_thresholds() -> Thresholds | None:
+    """Umbrales de nivel, o None mientras gerencia no los defina."""
+    with _open() as (repository, uow):
+        try:
+            thresholds = GetLevelThresholds(repository, uow).execute()
+        except NotFoundError:
+            return None
+    return Thresholds(thresholds.min_amount_b.amount, thresholds.min_amount_a.amount)
 
 
 def classify_level(amount_12m: Decimal) -> str:

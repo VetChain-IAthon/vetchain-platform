@@ -81,19 +81,19 @@ def test_monthly_amounts_follow_sales_definition(session):
     repo = SqlSalesReadRepository(session)
     months = repo.monthly_amounts(YEAR_2025, SalesDefinition())
     assert [(m.month, m.amount) for m in months] == [
-        (date(2025, 1, 1), Money("100.01")),
+        (date(2025, 1, 1), Money("100.00")),
         (date(2025, 2, 1), Money("45.00")),
         (date(2025, 3, 1), Money("10.00")),
     ]
-    assert months[0].dispatched_amount == Money("100.01")
+    assert months[0].dispatched_amount == Money("100.00")
     everything = repo.monthly_amounts(YEAR_2025, SalesDefinition(frozenset()))
     assert everything[1].amount == Money("115.00")  # incluye el pedido cancelado
 
 
 def test_amounts_by_category_and_customer(session):
-    assert SqlSalesReadRepository(session).amounts_by_category(YEAR_2025, SalesDefinition()) == [("001", Money("155.01"))]
+    assert SqlSalesReadRepository(session).amounts_by_category(YEAR_2025, SalesDefinition()) == [("001", Money("155.00"))]
     assert SqlCustomersReadRepository(session).amounts_by_customer(YEAR_2025, SalesDefinition()) == [
-        ("20111111111", Money("145.01")),
+        ("20111111111", Money("145.00")),
         ("10222222222", Money("10.00")),
     ]
 
@@ -101,7 +101,7 @@ def test_amounts_by_category_and_customer(session):
 def test_stock_levels(session):
     levels = {level.product_code: level for level in SqlStockReadRepository(session).levels_at(2025, 3)}
     assert levels["MED0000001"].balance == Decimal("12")
-    assert levels["SRV0000001"].product_name is None  # nombre vacío en el kardex
+    assert "SRV0000001" not in levels  # solo productos veterinarios
 
 
 # --- coherencia entre el dominio de data_imports y el cargador ------------------------------------

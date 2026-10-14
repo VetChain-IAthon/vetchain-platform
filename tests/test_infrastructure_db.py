@@ -136,7 +136,7 @@ def test_last_paid_price_is_estimated_and_skips_bonus_and_cancelled(loaded):
 def test_monthly_sales(loaded):
     rows = queries.monthly_sales(loaded)
     assert [(r["month"], r["order_count"], r["amount"], r["dispatched_amount"]) for r in rows] == [
-        ("2025-01", 1, Decimal("100.01"), Decimal("100.01")),
+        ("2025-01", 1, Decimal("100.00"), Decimal("100.00")),  # excluye la línea bonificada
         ("2025-02", 1, Decimal("45.00"), Decimal("0.00")),
         ("2025-03", 1, Decimal("10.00"), Decimal("0.00")),
     ]
