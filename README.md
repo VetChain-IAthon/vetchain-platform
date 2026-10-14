@@ -13,13 +13,16 @@ python -m venv .venv
 source .venv/bin/activate        # En Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env              # y completa los valores
-python -m scripts.create_tables   # crea las tablas en la base
+alembic upgrade head              # crea o actualiza las tablas (migraciones)
+python -m scripts.load_csv         # carga los 7 CSV de data/ (no se suben al repo)
+python -m scripts.seed_users       # crea gerencia y vendedor iniciales (SEED_* en .env)
 uvicorn app.main:app --reload
 ```
 
 Con la API encendida:
 - Documentación interactiva: http://localhost:8000/docs
 - Estado general: http://localhost:8000/health
+- API bajo http://localhost:8000/api/v1 (contrato en `docs/endpoints.md`)
 
 ## Pruebas
 
@@ -31,10 +34,11 @@ pytest
 
 ```
 app/
+  infrastructure/    base de datos compartida: ORM de Defontana, unidad de trabajo, consultas, cargador CSV
   main.py            punto de entrada: registra los módulos
   core/              núcleo compartido: configuración, base de datos, seguridad
-  modules/           un módulo por carpeta (router, service, schemas, models)
-docs/                arquitectura, base de datos y módulos
+  modules/           un módulo por carpeta, en capas: domain, application, infrastructure, interface
+docs/                arquitectura, contrato de capas, base de datos y módulos
 prompts/             textos que se envían a Gemini
 scripts/             tareas sueltas: crear tablas, cargar CSV, entrenar el modelo
 models/              model.json del modelo de predicción

@@ -1,0 +1,19 @@
+from typing import Protocol
+
+from app.modules.settings.domain.entities import CustomerLevelRule, LevelThresholds, PricingSettings
+
+
+class SettingsRepository(Protocol):
+    """Devuelve None (o una lista incompleta) mientras gerencia no haya configurado los valores."""
+
+    def get_pricing(self) -> PricingSettings | None: ...
+
+    def save_pricing(self, pricing: PricingSettings) -> None: ...
+
+    def list_level_rules(self) -> list[CustomerLevelRule]: ...
+
+    def save_level_rule(self, rule: CustomerLevelRule) -> None: ...
+
+    def get_thresholds(self) -> LevelThresholds | None: ...
+
+    def save_thresholds(self, thresholds: LevelThresholds) -> None: ...

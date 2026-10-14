@@ -1,0 +1,1996 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "VetChain API",
+    "description": "API de VetChain para Mederi. Contrato en docs/endpoints.md. Errores: {\"error\": {code, message, details}}.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/sessions": {
+      "post": {
+        "tags": [
+          "sesión y perfil"
+        ],
+        "summary": "Create Session",
+        "description": "Inicia sesión y devuelve el token (JWT) para `Authorization: Bearer`.",
+        "operationId": "create_session_api_v1_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "tags": [
+          "sesión y perfil"
+        ],
+        "summary": "Get Me",
+        "description": "Usuario actual y su rol (la web arma el menú con esto).",
+        "operationId": "get_me_api_v1_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "sesión y perfil"
+        ],
+        "summary": "Update Me",
+        "description": "Cambia el correo o el teléfono propios.",
+        "operationId": "update_me_api_v1_me_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "tags": [
+          "usuarios"
+        ],
+        "summary": "List Users",
+        "operationId": "list_users_api_v1_users_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "usuarios"
+        ],
+        "summary": "Create User",
+        "operationId": "create_user_api_v1_users_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{user_id}": {
+      "patch": {
+        "tags": [
+          "usuarios"
+        ],
+        "summary": "Update User",
+        "description": "Cambia el rol (y el código de vendedor) o activa / desactiva la cuenta.",
+        "operationId": "update_user_api_v1_users__user_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alerts": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Alertas del día, ordenadas por dinero en juego (pendiente)",
+        "operationId": "pending_get_alerts_api_v1_alerts_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/alerts/summary": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Totales: alertas, contactados hoy, monto de 12 meses en juego (pendiente)",
+        "operationId": "pending_get_alerts_summary_api_v1_alerts_summary_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/alerts/{alert_id}": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Una alerta: producto habitual, producto cruzado, motivos y probabilidad (pendiente)",
+        "operationId": "pending_get_alerts_alert_id_api_v1_alerts__alert_id__get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/alerts/{alert_id}/explanation": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Texto de IA que explica la alerta (solo cifras agregadas) (pendiente)",
+        "operationId": "pending_get_alerts_alert_id_explanation_api_v1_alerts__alert_id__explanation_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/customers": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Lista de clientes con filtros de nivel, estado, búsqueda y vendedor (pendiente)",
+        "operationId": "pending_get_customers_api_v1_customers_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/customers/{ruc}": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Ficha del cliente con nivel y resumen de 12 meses (pendiente)",
+        "operationId": "pending_get_customers_ruc_api_v1_customers__ruc__get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/customers/{ruc}/orders": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Historial de pedidos (pendiente)",
+        "operationId": "pending_get_customers_ruc_orders_api_v1_customers__ruc__orders_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/customers/{ruc}/products": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Qué compra el cliente y con qué frecuencia (pendiente)",
+        "operationId": "pending_get_customers_ruc_products_api_v1_customers__ruc__products_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/customers/{ruc}/commercial-terms": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Nivel, margen, descuento máximo y días de crédito (pendiente)",
+        "operationId": "pending_get_customers_ruc_commercial_terms_api_v1_customers__ruc__commercial_terms_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/customers/{ruc}/contacts": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Registro de contactos (pendiente)",
+        "operationId": "pending_get_customers_ruc_contacts_api_v1_customers__ruc__contacts_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Registrar un contacto y su resultado (pendiente)",
+        "operationId": "pending_post_customers_ruc_contacts_api_v1_customers__ruc__contacts_post",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/customers/{ruc}/whatsapp-link": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Enlace wa.me con el mensaje sugerido (pendiente)",
+        "operationId": "pending_get_customers_ruc_whatsapp_link_api_v1_customers__ruc__whatsapp_link_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/customers/{ruc}/brief": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Ficha del cliente para reunión (from, to, projection) (pendiente)",
+        "operationId": "pending_get_customers_ruc_brief_api_v1_customers__ruc__brief_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/insights/questions": {
+      "post": {
+        "tags": [
+          "preguntas a los datos"
+        ],
+        "summary": "Pregunta en lenguaje natural; la respuesta lista sus fuentes (pendiente)",
+        "operationId": "pending_post_insights_questions_api_v1_insights_questions_post",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/settings/pricing": {
+      "get": {
+        "tags": [
+          "ajustes"
+        ],
+        "summary": "Get Pricing",
+        "description": "IGV, días de vigencia de la cotización, margen mínimo y rebaja de margen en promociones.",
+        "operationId": "get_pricing_api_v1_settings_pricing_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "ajustes"
+        ],
+        "summary": "Replace Pricing",
+        "operationId": "replace_pricing_api_v1_settings_pricing_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PricingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/settings/customer-levels": {
+      "get": {
+        "tags": [
+          "ajustes"
+        ],
+        "summary": "List Customer Levels",
+        "description": "Niveles A, B y C con descuento máximo, margen y días de crédito.",
+        "operationId": "list_customer_levels_api_v1_settings_customer_levels_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerLevelsOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/settings/customer-levels/{level}": {
+      "put": {
+        "tags": [
+          "ajustes"
+        ],
+        "summary": "Replace Customer Level",
+        "operationId": "replace_customer_level_api_v1_settings_customer_levels__level__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "level",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Level"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerLevelIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerLevelOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/level-thresholds": {
+      "get": {
+        "tags": [
+          "ajustes"
+        ],
+        "summary": "Get Level Thresholds",
+        "description": "Montos de pedidos en 12 meses (sin IGV) a partir de los cuales un cliente es B o A.",
+        "operationId": "get_level_thresholds_api_v1_settings_level_thresholds_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LevelThresholdsOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "ajustes"
+        ],
+        "summary": "Replace Level Thresholds",
+        "operationId": "replace_level_thresholds_api_v1_settings_level_thresholds_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LevelThresholdsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LevelThresholdsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/products": {
+      "get": {
+        "tags": [
+          "cotizaciones"
+        ],
+        "summary": "Buscar productos para cotizar (pendiente)",
+        "operationId": "pending_get_products_api_v1_products_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/products/{code}": {
+      "get": {
+        "tags": [
+          "cotizaciones"
+        ],
+        "summary": "Un producto con su precio de referencia (pendiente)",
+        "operationId": "pending_get_products_code_api_v1_products__code__get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/quotation-previews": {
+      "post": {
+        "tags": [
+          "cotizaciones"
+        ],
+        "summary": "Calcular totales, IGV y margen sin guardar (pendiente)",
+        "operationId": "pending_post_quotation_previews_api_v1_quotation_previews_post",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/quotations": {
+      "get": {
+        "tags": [
+          "cotizaciones"
+        ],
+        "summary": "Lista de cotizaciones con filtros (pendiente)",
+        "operationId": "pending_get_quotations_api_v1_quotations_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "cotizaciones"
+        ],
+        "summary": "Emitir una cotización (valida descuento y margen) (pendiente)",
+        "operationId": "pending_post_quotations_api_v1_quotations_post",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/quotations/{quotation_id}": {
+      "get": {
+        "tags": [
+          "cotizaciones"
+        ],
+        "summary": "Detalle de una cotización con sus líneas (pendiente)",
+        "operationId": "pending_get_quotations_quotation_id_api_v1_quotations__quotation_id__get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/prediction/model": {
+      "get": {
+        "tags": [
+          "predicción"
+        ],
+        "summary": "Versión, fecha de entrenamiento y calidad del modelo (pendiente)",
+        "operationId": "pending_get_prediction_model_api_v1_prediction_model_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/dashboard/summary": {
+      "get": {
+        "tags": [
+          "panel y reportes"
+        ],
+        "summary": "Resumen semanal y cifras principales (pendiente)",
+        "operationId": "pending_get_dashboard_summary_api_v1_dashboard_summary_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports": {
+      "get": {
+        "tags": [
+          "panel y reportes"
+        ],
+        "summary": "Catálogo de reportes con el origen de sus datos (pendiente)",
+        "operationId": "pending_get_reports_api_v1_reports_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/kpis": {
+      "get": {
+        "tags": [
+          "panel y reportes"
+        ],
+        "summary": "Los KPIs con su estado (pendiente)",
+        "operationId": "pending_get_reports_kpis_api_v1_reports_kpis_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/sales": {
+      "get": {
+        "tags": [
+          "panel y reportes"
+        ],
+        "summary": "Pedidos por mes, producto y categoría (pendiente)",
+        "operationId": "pending_get_reports_sales_api_v1_reports_sales_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/customers": {
+      "get": {
+        "tags": [
+          "panel y reportes"
+        ],
+        "summary": "Concentración, maestro de clientes, en riesgo y dormidos (pendiente)",
+        "operationId": "pending_get_reports_customers_api_v1_reports_customers_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/stock": {
+      "get": {
+        "tags": [
+          "panel y reportes"
+        ],
+        "summary": "Estado del stock (pendiente)",
+        "operationId": "pending_get_reports_stock_api_v1_reports_stock_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/receivables": {
+      "get": {
+        "tags": [
+          "panel y reportes"
+        ],
+        "summary": "Deuda por antigüedad y nivel (estimada) (pendiente)",
+        "operationId": "pending_get_reports_receivables_api_v1_reports_receivables_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/salespeople": {
+      "get": {
+        "tags": [
+          "panel y reportes"
+        ],
+        "summary": "Pedidos de 12 meses y seguimiento de alertas por vendedor (pendiente)",
+        "operationId": "pending_get_reports_salespeople_api_v1_reports_salespeople_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/funnel": {
+      "get": {
+        "tags": [
+          "panel y reportes"
+        ],
+        "summary": "Embudo: alertas, contactos, cotizaciones, convertidas y monto recuperado (pendiente)",
+        "operationId": "pending_get_reports_funnel_api_v1_reports_funnel_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/import-suggestions": {
+      "get": {
+        "tags": [
+          "planificación de importación"
+        ],
+        "summary": "Pedido sugerido por producto (pendiente)",
+        "operationId": "pending_get_import_suggestions_api_v1_import_suggestions_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/import-suggestions/{suggestion_id}": {
+      "patch": {
+        "tags": [
+          "planificación de importación"
+        ],
+        "summary": "Decisión: aprobar, rechazar o volver a pendiente (pendiente)",
+        "operationId": "pending_patch_import_suggestions_suggestion_id_api_v1_import_suggestions__suggestion_id__patch",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/data-sources": {
+      "get": {
+        "tags": [
+          "carga de datos"
+        ],
+        "summary": "Los 7 archivos: contenido, registros, período y estado (pendiente)",
+        "operationId": "pending_get_data_sources_api_v1_data_sources_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/data-imports": {
+      "get": {
+        "tags": [
+          "carga de datos"
+        ],
+        "summary": "Cargas anteriores (pendiente)",
+        "operationId": "pending_get_data_imports_api_v1_data_imports_get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "carga de datos"
+        ],
+        "summary": "Subir un CSV (multipart, campo source); se valida pero no se aplica (pendiente)",
+        "operationId": "pending_post_data_imports_api_v1_data_imports_post",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/data-imports/{import_id}": {
+      "get": {
+        "tags": [
+          "carga de datos"
+        ],
+        "summary": "Revisión: filas leídas y errores por línea (pendiente)",
+        "operationId": "pending_get_data_imports_import_id_api_v1_data_imports__import_id__get",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "carga de datos"
+        ],
+        "summary": "Confirmar (actualiza e inserta) o cancelar (pendiente)",
+        "operationId": "pending_patch_data_imports_import_id_api_v1_data_imports__import_id__patch",
+        "responses": {
+          "501": {
+            "description": "Endpoint del contrato aún no construido",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "general"
+        ],
+        "summary": "Health",
+        "description": "La API está viva.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CustomerLevelIn": {
+        "properties": {
+          "max_discount_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Max Discount Pct"
+          },
+          "margin_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Margin Pct"
+          },
+          "credit_days": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Credit Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "max_discount_pct",
+          "margin_pct",
+          "credit_days"
+        ],
+        "title": "CustomerLevelIn"
+      },
+      "CustomerLevelOut": {
+        "properties": {
+          "max_discount_pct": {
+            "type": "number",
+            "title": "Max Discount Pct"
+          },
+          "margin_pct": {
+            "type": "number",
+            "title": "Margin Pct"
+          },
+          "credit_days": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Credit Days"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level"
+          }
+        },
+        "type": "object",
+        "required": [
+          "max_discount_pct",
+          "margin_pct",
+          "credit_days",
+          "level"
+        ],
+        "title": "CustomerLevelOut"
+      },
+      "CustomerLevelsOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerLevelOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "missing_levels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Levels",
+            "description": "Niveles que gerencia aún no configuró"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "missing_levels"
+        ],
+        "title": "CustomerLevelsOut"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LevelThresholdsIn": {
+        "properties": {
+          "min_amount_b": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Min Amount B",
+            "description": "Monto mínimo de pedidos en 12 meses (PEN, sin IGV) para ser B"
+          },
+          "min_amount_a": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Min Amount A",
+            "description": "Monto mínimo para ser A; debe ser mayor o igual que el de B"
+          }
+        },
+        "type": "object",
+        "required": [
+          "min_amount_b",
+          "min_amount_a"
+        ],
+        "title": "LevelThresholdsIn"
+      },
+      "LevelThresholdsOut": {
+        "properties": {
+          "min_amount_b": {
+            "type": "number",
+            "title": "Min Amount B",
+            "description": "Monto mínimo de pedidos en 12 meses (PEN, sin IGV) para ser B"
+          },
+          "min_amount_a": {
+            "type": "number",
+            "title": "Min Amount A",
+            "description": "Monto mínimo para ser A; debe ser mayor o igual que el de B"
+          }
+        },
+        "type": "object",
+        "required": [
+          "min_amount_b",
+          "min_amount_a"
+        ],
+        "title": "LevelThresholdsOut"
+      },
+      "MeUpdateIn": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          }
+        },
+        "type": "object",
+        "title": "MeUpdateIn"
+      },
+      "PricingIn": {
+        "properties": {
+          "igv_rate_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Igv Rate Pct",
+            "examples": [
+              18
+            ]
+          },
+          "quotation_validity_days": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Quotation Validity Days",
+            "examples": [
+              15
+            ]
+          },
+          "min_margin_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Min Margin Pct"
+          },
+          "promo_margin_cut_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Promo Margin Cut Pct",
+            "description": "Cuánto baja el margen mínimo en promociones"
+          }
+        },
+        "type": "object",
+        "required": [
+          "igv_rate_pct",
+          "quotation_validity_days",
+          "min_margin_pct",
+          "promo_margin_cut_pct"
+        ],
+        "title": "PricingIn"
+      },
+      "PricingOut": {
+        "properties": {
+          "igv_rate_pct": {
+            "type": "number",
+            "title": "Igv Rate Pct",
+            "examples": [
+              18
+            ]
+          },
+          "quotation_validity_days": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Quotation Validity Days",
+            "examples": [
+              15
+            ]
+          },
+          "min_margin_pct": {
+            "type": "number",
+            "title": "Min Margin Pct"
+          },
+          "promo_margin_cut_pct": {
+            "type": "number",
+            "title": "Promo Margin Cut Pct",
+            "description": "Cuánto baja el margen mínimo en promociones"
+          }
+        },
+        "type": "object",
+        "required": [
+          "igv_rate_pct",
+          "quotation_validity_days",
+          "min_margin_pct",
+          "promo_margin_cut_pct"
+        ],
+        "title": "PricingOut"
+      },
+      "SessionCreateIn": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Email",
+            "examples": [
+              "gerencia@mederi.pe"
+            ]
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "SessionCreateIn"
+      },
+      "SessionOut": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "user"
+        ],
+        "title": "SessionOut"
+      },
+      "UserCreateIn": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Email"
+          },
+          "full_name": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Full Name"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "description": "manager | salesperson"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Password"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "salesperson_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salesperson Code",
+            "description": "Obligatorio para salesperson"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "full_name",
+          "role",
+          "password"
+        ],
+        "title": "UserCreateIn"
+      },
+      "UserOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "description": "manager (gerencia) | salesperson (vendedor)"
+          },
+          "salesperson_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salesperson Code"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "full_name",
+          "phone",
+          "role",
+          "salesperson_code",
+          "active"
+        ],
+        "title": "UserOut"
+      },
+      "UserPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/UserOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "per_page"
+        ],
+        "title": "UserPageOut"
+      },
+      "UserUpdateIn": {
+        "properties": {
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "salesperson_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salesperson Code"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "title": "UserUpdateIn"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "description": "Token de POST /api/v1/sessions",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
