@@ -73,7 +73,7 @@ class StageImport:
         except ValueError:
             raise BusinessRuleError("Elige uno de los 7 archivos de Mederi.", "unknown_source") from None
         rows = _read_rows(command.content)
-        source.check_headers(rows[0])
+        _check_headers(source, rows[0])
         data_rows = rows[1:]
         source.restore_leading_zeros(data_rows)
         if not data_rows:
@@ -178,6 +178,20 @@ class DecideImport:
             self.staging.discard(import_id)
             self.uow.commit()
             return data_import
+
+
+def _check_headers(source: DataSource, header_row: list[str]) -> None:
+    """Si los encabezados son de otro de los 7 archivos, el mensaje dice cuál elegir."""
+    try:
+        source.check_headers(header_row)
+    except BusinessRuleError:
+        found = tuple(value.strip().lower() for value in header_row)
+        other = next((s for s in SOURCES.values() if s.headers == found), None)
+        if other is not None:
+            raise BusinessRuleError(
+                f"Este archivo es de {other.description.lower()}, no de {source.description.lower()}. "
+                f"Elige «{other.number}. {other.description}» en el paso 1 y vuelve a revisarlo.", "wrong_source") from None
+        raise
 
 
 def _get(imports: DataImportRepository, import_id: int) -> DataImport:

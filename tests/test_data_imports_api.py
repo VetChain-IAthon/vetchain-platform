@@ -53,7 +53,10 @@ def test_cancel_wrong_headers_and_roles(client, manager, login):
     assert cancelled["status"] == "cancelled" and cancelled["rows_loaded"] is None
 
     wrong = _upload(client, manager, "orders", SALESPEOPLE_HEADER + "009,NUEVO,,,1\n")
-    assert wrong.status_code == 400 and wrong.json()["error"]["code"] == "invalid_headers"
+    assert wrong.status_code == 400 and wrong.json()["error"]["code"] == "wrong_source"
+    assert "Elige «7. Vendedores»" in wrong.json()["error"]["message"]
+    unknown = _upload(client, manager, "orders", "a,b,c\n1,2,3\n")
+    assert unknown.status_code == 400 and unknown.json()["error"]["code"] == "invalid_headers"
     empty = _upload(client, manager, "salespeople", SALESPEOPLE_HEADER)
     assert empty.status_code == 400 and empty.json()["error"]["code"] == "empty_file"
     # Un pedido de un cliente que no existe se rechaza por línea (misma regla que la carga inicial)
