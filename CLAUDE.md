@@ -7,7 +7,9 @@ Ayuda a gerencia y a los vendedores a decidir con datos. El frontend vive en otr
 - FastAPI (Python 3.11+), SQLAlchemy 2.0, PostgreSQL en Neon (SQLite en local)
 - Modelo de predicción: XGBoost, archivo `models/model.json` dentro del repo
 - IA generativa: Gemini API (capa gratuita). Solo se le envían cifras agregadas, nunca nombres de clientes ni RUC.
-- Despliegue: Render publica solo al subir a `main`. No hay GitHub Actions por ahora.
+- Correo: Resend (dominio propio verificado), Gmail SMTP (una cuenta compartida) y Gmail OAuth (cada usuario conecta el suyo).
+- Despliegue: Render (`render.yaml`) desde `main`, con despliegue automático apagado: tras fusionar, *Manual Deploy*.
+  Antes de arrancar corre `alembic upgrade head`. Base en Neon. No hay GitHub Actions por ahora.
 
 ## Arquitectura: monolito modular por capas
 Una sola API. **El contrato está en `docs/capas.md`: leerlo antes de construir un módulo.** Resumen:
@@ -27,7 +29,7 @@ Una sola API. **El contrato está en `docs/capas.md`: leerlo antes de construir 
 - `tests/test_architecture.py` verifica estas reglas.
 
 Módulos y a quién pueden llamar:
-- `auth`, `settings`, `prediction`: a ninguno
+- `auth`, `settings`, `prediction`, `messaging`: a ninguno
 - `customers` → prediction, explanations, settings
 - `quotations` → settings, customers
 - `import_planning` → prediction
@@ -35,10 +37,18 @@ Módulos y a quién pueden llamar:
 - `reports` → settings, data_imports
 - `explanations` → reports
 
-**Estado del código:** sigue en estructura plana (`router.py`, `service.py`, `schemas.py`, `models.py`) y con nombres
-anteriores (`pricing`, `quotes`, `planning`, `data_import`, roles `management`/`sales_rep`, tablas `sales_reps`,
-`order_items`, `kardex`). Cada módulo se pasa a capas y se renombra cuando se construye (ver `docs/capas.md`, sección 8).
+**Estado del código:** todos los módulos están en `app/modules/`. `prediction` y `explanations` solo tienen domain e
+interface con rutas 501; `import_planning` sirve un escenario de ejemplo (`simulated`) sin capa de aplicación.
 Hay puntos abiertos en la sección 9 de `docs/capas.md`, entre ellos un ciclo de dependencias.
+
+## Correo (`messaging`)
+- Correo general: un solo remitente por defecto, lo define gerencia en Ajustes › Correo (`/email-senders`). La dirección
+  decide la ruta (`RoutingEmailGateway`): `@gmail.com` → Gmail SMTP (`GMAIL_SMTP_EMAIL` debe coincidir); otra → Resend.
+  Dominios públicos (hotmail, outlook, yahoo…) se rechazan como remitente.
+- Mi Gmail: OAuth por usuario (`/gmail/connect` → `/gmail/callback`); el refresh token se guarda cifrado con Fernet
+  (`GOOGLE_OAUTH_TOKEN_KEY`). Requiere `GOOGLE_OAUTH_*` y `FRONTEND_URL`; si todo sale bien, el callback redirige al frontend.
+- Sin `RESEND_API_KEY` el envío por Resend queda `simulated` (se registra, no sale). Todo envío queda en `email_logs`.
+- Límites: 10 destinatarios, 10 MB de adjuntos. Variables en `.env.example`.
 
 ## Datos
 Siete CSV de Mederi **sin encabezados**: clientes (1 330), pedidos (14 945), pedido_detalle (67 403),
@@ -87,7 +97,9 @@ nunca borra); los módulos solo las leen. Guía de la capa: `docs/infraestructur
 Hecho: dominio de todos los módulos; infraestructura de base de datos con Alembic; repositorios de customers y reports;
 `auth` y `settings` en las cuatro capas; las 49 rutas del contrato registradas (las pendientes responden 501);
 errores estándar, contrato y OpenAPI con pruebas. Base local `VetChainDb` migrada, cargada y con usuarios seed.
-1. `customers` y `reports`: casos de uso e interfaz sobre los repositorios existentes (las alertas necesitan `prediction`).
-2. `quotations`, `data_imports`, `prediction`, `explanations`, `import_planning`.
-3. Resolver los puntos abiertos de `docs/capas.md` (ciclo entre módulos y tipos que cruzan módulos).
-4. Producción: Neon, `DATABASE_URL` en Render, `alembic upgrade head`, carga de CSV y `seed_users`.
+También: `customers`, `reports`, `quotations`, `data_imports` y `messaging` completos; producción en Render + Neon.
+1. `prediction` (modelo XGBoost) y alertas de `customers` (`/alerts`, hoy 501).
+2. `explanations` (`/insights/questions` con Gemini, hoy 501).
+3. `import_planning` con datos reales en lugar del escenario simulado.
+4. Resolver los puntos abiertos de `docs/capas.md` (ciclo entre módulos y tipos que cruzan módulos).
+5. Correo en producción: claves de Resend/Gmail en Render; el callback de OAuth no maneja la cancelación en Google (422).
