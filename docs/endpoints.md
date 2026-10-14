@@ -58,7 +58,7 @@ la app coincidan con las tablas de este documento, y `docs/openapi.json` se rege
 | GET | /customers/{ruc}/contacts | Registro de contactos | M, S | ✅ |
 | POST | /customers/{ruc}/contacts | Registrar un contacto y su resultado | M, S | ✅ |
 | GET | /customers/{ruc}/whatsapp-link | Enlace wa.me con el mensaje sugerido | M, S | ✅ |
-| GET | /customers/{ruc}/brief | Ficha para reunión. Query: from, to, projection (month, semester, year) | M | ⏳ |
+| GET | /customers/{ruc}/brief | Ficha para reunión (interna). Query: from, to, projection (month, semester, year). Proyección, ganancia, ofertas, guion y cobranza van como avisos | M | ✅ |
 
 Fecha de corte: la ventana de 12 meses termina en el último pedido cargado (`data_as_of`), no en la fecha de hoy,
 porque los CSV son una foto. `level` es `null` (y `levels_configured` es `false`) mientras gerencia no defina los
@@ -91,10 +91,10 @@ La emisión recalcula la vista previa, no confía en importes enviados por la we
 | GET | /dashboard/summary | Monto y pedidos de 12 meses, ticket, clientes, concentración y meses; alertas con aviso | M | ✅ |
 | GET | /reports | Catálogo de reportes con el origen de sus datos | M | ✅ |
 | GET | /reports/kpis | Valores disponibles sin metas ni estados inventados | M | ✅ parcial |
-| GET | /reports/sales | Pedidos por mes, producto y categoría; margen sin datos de costos | M | ✅ |
+| GET | /reports/sales | Pedidos por mes, producto y categoría; precio pagado frente a la referencia (5 principales) y descuento en factura; filtro salesperson_code; margen sin datos de costos | M | ✅ |
 | GET | /reports/customers | Concentración, maestro de clientes y top; riesgo y dormancia pendientes de reglas | M | ✅ parcial |
-| GET | /reports/stock | Saldo por producto al último cierre, con aviso de campo sin confirmar y sin lotes | M | ✅ parcial |
-| GET | /reports/receivables | Aviso: cobros y pedidos no se pueden enlazar | M | ✅ aviso |
+| GET | /reports/stock | Saldo por producto al último cierre, con aviso de campo sin confirmar y sin lotes; demanda de 12 meses, cobertura en días y estado por producto (umbrales provisionales) | M | ✅ parcial |
+| GET | /reports/receivables | Cobrado en el período por mes y los 10 clientes que más pagaron (real); deuda pendiente y vencida en null con aviso `receipts_not_linked` | M | ✅ aviso |
 | GET | /reports/salespeople | Monto, pedidos y clientes de 12 meses por vendedor; alertas pendientes | M | ✅ parcial |
 | GET | /reports/funnel | Estructura sin cifras hasta definir alertas y conversión | M | ✅ aviso |
 
@@ -134,11 +134,11 @@ y `customer-levels` devuelve `missing_levels`. No hay valores por defecto invent
 ## Carga de datos — `data_imports`
 | Método | Ruta | Para qué | Roles | Estado |
 |---|---|---|---|---|
-| GET | /data-sources | Los 7 archivos: contenido, registros, período y estado | M | ⏳ |
-| POST | /data-imports | Subir un CSV (multipart, campo `source`); se valida, no se aplica | M | ⏳ |
-| GET | /data-imports | Cargas anteriores | M | ⏳ |
-| GET | /data-imports/{import_id} | Revisión: filas leídas y errores por línea | M | ⏳ |
-| PATCH | /data-imports/{import_id} | Confirmar (actualiza e inserta, nunca borra) o cancelar | M | ⏳ |
+| GET | /data-sources | Los 7 archivos: encabezados esperados, filas en la base, período y última carga confirmada | M | ✅ |
+| POST | /data-imports | Subir un CSV con encabezados (multipart: `source`, `file`, `origin`); se valida, no se aplica | M | ✅ |
+| GET | /data-imports | Cargas anteriores | M | ✅ |
+| GET | /data-imports/{import_id} | Revisión: filas leídas y errores por línea | M | ✅ |
+| PATCH | /data-imports/{import_id} | Confirmar (actualiza e inserta, nunca borra) o cancelar. Body: `{"action": "confirm" \| "cancel"}` | M | ✅ |
 
 ## General
 | Método | Ruta | Para qué | Roles | Estado |

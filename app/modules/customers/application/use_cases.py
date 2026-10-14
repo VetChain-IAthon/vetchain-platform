@@ -4,7 +4,7 @@ Los montos son pedidos sin IGV de productos veterinarios: un pedido no es una ve
 La ventana de 12 meses termina en la fecha de corte de los datos (el último pedido cargado).
 """
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from app.core.application import Page, Paging, SessionUser
@@ -15,6 +15,8 @@ from app.modules.customers.domain.entities import (
     CustomerActivity,
     CustomerStanding,
     OrderSummary,
+    PeriodOrder,
+    PeriodProduct,
     ProductPurchase,
 )
 from app.modules.customers.domain.ports import ContactRepository, CustomerReadRepository, SettingsGateway
@@ -197,6 +199,7 @@ class AtRiskCustomer:
     days_since_last_order: int
     rhythm: PurchaseRhythm | None  # None: menos de dos pedidos en 12 meses, se usó el ritmo por defecto
     money_at_stake: Money  # pedido promedio de 12 meses
+    amount_12m: Money = Money.zero()  # monto de pedidos de 12 meses, sin IGV
 
 
 @dataclass(frozen=True)
@@ -238,7 +241,7 @@ def _at_risk_customers(customers: CustomerReadRepository, scope: SalespersonScop
         rhythm = PurchaseRhythm.from_order_dates(act.order_dates)
         if evaluator.evaluate(act.last_order_date, rhythm, as_of) is CustomerStatus.AT_RISK:
             at_risk.append(AtRiskCustomer(customer, act.last_order_date, (as_of - act.last_order_date).days,
-                                          rhythm, AlertPrioritizer.money_at_stake(act)))
+                                          rhythm, AlertPrioritizer.money_at_stake(act), act.amount))
     at_risk.sort(key=lambda item: (-item.money_at_stake.amount, item.customer.name))
     return at_risk
 
@@ -430,3 +433,163 @@ class BuildWhatsappLink:
             customer = _customer_in_scope(self.customers, Ruc(ruc), scope)
             text = (message or "").strip() or SuggestedMessage.for_customer(customer.name)
             return WhatsappLink(WhatsappLinkBuilder.build(customer.phone, text), text)
+
+
+BRIEF_PROJECTIONS = ("month", "semester", "year")
+
+
+@dataclass(frozen=True)
+class CustomerBriefQuery:
+    ruc: str
+    date_from: date | None = None  # por defecto, 12 meses antes de `date_to`
+    date_to: date | None = None  # por defecto, la fecha de corte de los datos
+    projection: str = "month"
+
+
+@dataclass(frozen=True)
+class BriefProduct:
+    purchase: PeriodProduct
+    reference_price: Money | None  # último precio pagado por cualquier cliente (estimado)
+
+    @property
+    def below_reference_pct(self) -> Decimal | None:
+        """Cuánto por debajo (positivo) o por encima (negativo) de la referencia pagó en promedio."""
+        paid = self.purchase.average_price
+        if paid is None or self.reference_price is None or self.reference_price.amount <= 0:
+            return None
+        return ((self.reference_price.amount - paid.amount) * 100 / self.reference_price.amount).quantize(Decimal("0.1"))
+
+
+@dataclass(frozen=True)
+class MonthlyAmount:
+    month: str  # AAAA-MM
+    amount: Money
+    order_count: int
+
+
+@dataclass(frozen=True)
+class CustomerBrief:
+    """Ficha para reunión (versión interna). Solo cifras reales de pedidos; lo que necesita el modelo de predicción,
+    Gemini, costos, lotes o cobros enlazados va como aviso en `warnings`, nunca como cifra inventada."""
+
+    customer: Customer
+    level: Level | None
+    credit_days: int | None
+    date_from: date
+    date_to: date
+    data_as_of: date | None
+    projection: str
+    amount: Money
+    order_count: int
+    average_order_amount: Money
+    share_pct: Decimal  # % del monto de todos los clientes en el período
+    rank: int | None  # puesto por monto en el período; None sin pedidos
+    ranked_customers: int
+    salesperson_name: str | None
+    salesperson_share_pct: Decimal | None  # % de sus pedidos del período que atendió su vendedor asignado
+    rhythm: PurchaseRhythm | None
+    last_order_date: date | None  # en todo el historial hasta `date_to`
+    days_since_last_order: int | None
+    days_late: int | None  # días por encima de su ritmo; 0 si va al día
+    invoice_discount: Money
+    list_amount: Money
+    monthly: tuple[MonthlyAmount, ...]
+    order_dates: tuple[date, ...]
+    products: tuple[BriefProduct, ...]
+    warnings: tuple[str, ...]
+
+    @property
+    def expected_next_order(self) -> date | None:
+        if self.last_order_date is None or self.rhythm is None:
+            return None
+        return self.last_order_date + timedelta(days=int(self.rhythm.average_days.to_integral_value()))
+
+
+class GetCustomerBrief:
+    """Ficha del cliente para reunión en un período: cuánto pidió, a qué precio, su ritmo y su vendedor.
+
+    Proyección, ganancia, ofertas, guion, resumen y cobranza quedan pendientes (avisos) hasta que existan el modelo
+    de predicción, Gemini, costos validados, lotes y cobros enlazados con pedidos.
+    """
+
+    def __init__(self, customers: CustomerReadRepository, settings: SettingsGateway, uow: UnitOfWork) -> None:
+        self.customers, self.settings, self.uow = customers, settings, uow
+
+    def execute(self, query: CustomerBriefQuery, scope: SalespersonScope) -> CustomerBrief:
+        if query.projection not in BRIEF_PROJECTIONS:
+            raise BusinessRuleError("La proyección debe ser month, semester o year.", "invalid_projection")
+        with self.uow:
+            customer = _customer_in_scope(self.customers, Ruc(query.ruc), scope)
+            as_of = _data_as_of(self.customers)
+            date_to = query.date_to or as_of
+            if date_to is None:
+                raise BusinessRuleError("Aún no hay pedidos cargados para armar la ficha.", "no_order_data")
+            date_from = query.date_from or TwelveMonthWindow.start(date_to)
+            if date_from > date_to:
+                raise BusinessRuleError("La fecha inicial debe ser anterior o igual a la final.", "invalid_period")
+
+            orders = self.customers.period_orders(customer.ruc, date_from, date_to)
+            products = self.customers.period_products(customer.ruc, date_from, date_to)
+            amounts = self.customers.amounts_by_customer(date_from, date_to)
+            references = self.customers.reference_prices([p.product_code for p in products], date_to)
+            history = self.customers.activity([customer.ruc], date.min)[customer.ruc]
+            past_dates = [d for d in history.order_dates if d <= date_to]
+            last_order = max(past_dates) if past_dates else None
+
+            amount = Money.total([o.amount for o in orders])
+            total = Money.total(list(amounts.values()))
+            ranking = sorted(amounts, key=lambda ruc: (-amounts[ruc].amount, ruc))
+            rank = ranking.index(customer.ruc.value) + 1 if customer.ruc.value in amounts else None
+            rhythm = PurchaseRhythm.from_order_dates([o.order_date for o in orders])
+            days_since = (date_to - last_order).days if last_order else None
+            days_late = (max(0, days_since - int(rhythm.average_days.to_integral_value()))
+                         if rhythm and days_since is not None else None)
+            level, credit_days = self._level_and_credit(customer.ruc, as_of)
+            assigned = customer.salesperson_code
+            names = self.customers.salesperson_names([assigned]) if assigned else {}
+            seller_share = (ShareCalculator.share_pct(Money.total([o.amount for o in orders if o.salesperson_code == assigned]), amount)
+                            if assigned and orders else None)
+
+            warnings = ["order_statuses_provisional", "projection_unavailable", "no_cost_data", "ai_unavailable",
+                        "no_lot_data", "receipts_not_linked"]
+            if level is None:
+                warnings.append("thresholds_not_configured")
+            return CustomerBrief(
+                customer=customer, level=level, credit_days=credit_days, date_from=date_from, date_to=date_to,
+                data_as_of=as_of, projection=query.projection, amount=amount, order_count=len(orders),
+                average_order_amount=amount.divided_by(len(orders)) if orders else Money.zero(),
+                share_pct=ShareCalculator.share_pct(amount, total), rank=rank, ranked_customers=len(amounts),
+                salesperson_name=names.get(assigned) if assigned else None, salesperson_share_pct=seller_share,
+                rhythm=rhythm, last_order_date=last_order, days_since_last_order=days_since, days_late=days_late,
+                invoice_discount=Money.total([o.invoice_discount for o in orders]),
+                list_amount=Money.total([o.list_amount for o in orders]),
+                monthly=_monthly(orders, date_from, date_to),
+                order_dates=tuple(o.order_date for o in orders),
+                products=tuple(BriefProduct(p, references.get(p.product_code)) for p in products),
+                warnings=tuple(warnings),
+            )
+
+    def _level_and_credit(self, ruc: Ruc, as_of: date | None) -> tuple[Level | None, int | None]:
+        """Nivel por el monto de 12 meses (como en toda la app) y días de crédito de ese nivel, si gerencia los definió."""
+        thresholds = self.settings.level_thresholds()
+        if thresholds is None or as_of is None:
+            return None, None
+        level = LevelClassifier(thresholds).classify(self.customers.activity([ruc], TwelveMonthWindow.start(as_of))[ruc].amount)
+        try:
+            return level, self.settings.commercial_terms(level).credit_days
+        except BusinessRuleError:
+            return level, None
+
+
+def _monthly(orders: list[PeriodOrder], date_from: date, date_to: date) -> tuple[MonthlyAmount, ...]:
+    """Monto y pedidos por mes, con los meses sin pedidos en cero."""
+    by_month: dict[str, list[PeriodOrder]] = {}
+    for order in orders:
+        by_month.setdefault(order.order_date.strftime("%Y-%m"), []).append(order)
+    months, year, month = [], date_from.year, date_from.month
+    while (year, month) <= (date_to.year, date_to.month):
+        key = f"{year:04d}-{month:02d}"
+        found = by_month.get(key, [])
+        months.append(MonthlyAmount(key, Money.total([o.amount for o in found]), len(found)))
+        year, month = (year + 1, 1) if month == 12 else (year, month + 1)
+    return tuple(months)

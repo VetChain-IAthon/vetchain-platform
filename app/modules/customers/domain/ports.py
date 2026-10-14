@@ -4,7 +4,7 @@ from datetime import date
 from typing import Protocol
 
 from app.core.application import Page, Paging
-from app.core.domain import Ruc
+from app.core.domain import Money, Ruc
 from app.modules.customers.domain.entities import (
     Alert,
     AlertExplanation,
@@ -13,6 +13,8 @@ from app.modules.customers.domain.entities import (
     Customer,
     CustomerActivity,
     OrderSummary,
+    PeriodOrder,
+    PeriodProduct,
     ProductPurchase,
 )
 from app.modules.customers.domain.value_objects import CommercialTerms, Level, LevelThresholds, Probability, SalespersonScope
@@ -42,6 +44,20 @@ class CustomerReadRepository(Protocol):
     def orders(self, ruc: Ruc, paging: Paging) -> Page[OrderSummary]: ...
 
     def products(self, ruc: Ruc) -> list[ProductPurchase]: ...
+
+    def period_orders(self, ruc: Ruc, date_from: date, date_to: date) -> list[PeriodOrder]:
+        """Pedidos del cliente en el período, del más antiguo al más reciente."""
+        ...
+
+    def period_products(self, ruc: Ruc, date_from: date, date_to: date) -> list[PeriodProduct]: ...
+
+    def amounts_by_customer(self, date_from: date, date_to: date) -> dict[str, Money]:
+        """Monto pedido de cada cliente con pedidos en el período (por RUC). Base del ranking y la participación."""
+        ...
+
+    def reference_prices(self, product_codes: list[str], as_of: date) -> dict[str, Money]:
+        """Último precio pagado por unidad de cada producto hasta `as_of`, a cualquier cliente (estimado)."""
+        ...
 
     def salesperson_names(self, codes: list[str]) -> dict[str, str]:
         """Nombre de cada vendedor por código."""

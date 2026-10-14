@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
@@ -9,6 +10,7 @@ from app.modules.customers.application import use_cases as uc
 from app.modules.customers.interface import dependencies as deps
 from app.modules.customers.interface.schemas import (
     CommercialTermsOut,
+    CustomerBriefOut,
     ContactIn,
     ContactOut,
     ContactPageOut,
@@ -96,6 +98,21 @@ def get_customer(ruc: str, user: SessionUser = Depends(any_role), use_case: uc.G
     return CustomerDetailOut.from_result(use_case.execute(ruc, uc.scope_for(user)))
 
 
+@router.get("/customers/{ruc}/brief", response_model=CustomerBriefOut)
+def get_customer_brief(
+    ruc: str,
+    date_from: date | None = Query(None, alias="from", description="Por defecto, 12 meses antes de `to`"),
+    date_to: date | None = Query(None, alias="to", description="Por defecto, la fecha de corte de los datos"),
+    projection: Literal["month", "semester", "year"] = "month",
+    user: SessionUser = Depends(require_role(*M)),
+    use_case: uc.GetCustomerBrief = Depends(deps.get_get_customer_brief),
+):
+    """Ficha para reunión (versión interna): pedidos, precios, ritmo y vendedor del período.
+    Proyección, ganancia, ofertas, guion y cobranza llegan como avisos en `warnings` hasta tener modelo, IA y datos."""
+    query = uc.CustomerBriefQuery(ruc, date_from, date_to, projection)
+    return CustomerBriefOut.from_result(use_case.execute(query, uc.scope_for(user)))
+
+
 @router.get("/customers/{ruc}/orders", response_model=OrderPageOut)
 def list_customer_orders(
     ruc: str, page: int = Page, per_page: int = PerPage,
@@ -149,12 +166,11 @@ def build_whatsapp_link(
     return WhatsappLinkOut(url=link.url, message=link.message)
 
 
-# Rutas del contrato aún pendientes (docs/endpoints.md): alertas (fase 3) y ficha para reunión.
+# Rutas del contrato aún pendientes (docs/endpoints.md): alertas (fase 3).
 for method, path, roles, summary in [
     ("GET", "/alerts", MS, "Alertas del día, ordenadas por dinero en juego"),
     ("GET", "/alerts/summary", MS, "Totales: alertas, contactados hoy, monto de 12 meses en juego"),
     ("GET", "/alerts/{alert_id}", MS, "Una alerta: producto habitual, producto cruzado, motivos y probabilidad"),
     ("GET", "/alerts/{alert_id}/explanation", MS, "Texto de IA que explica la alerta (solo cifras agregadas)"),
-    ("GET", "/customers/{ruc}/brief", M, "Ficha del cliente para reunión (from, to, projection)"),
 ]:
     add_pending_route(router, method, path, roles, summary)

@@ -1,19 +1,23 @@
 """Consultas de reportes con fechas ancladas al último pedido disponible."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
 
 from app.core.domain import BusinessRuleError, DateRange, Money, UnitOfWork
-from app.modules.reports.domain.entities import Kpi, MonthlyAmount, SalesDefinition, StockLevel
-from app.modules.reports.domain.ports import CustomersReadRepository, SalesReadRepository, StockReadRepository
+from app.modules.reports.domain.entities import Kpi, MonthlyAmount, SalesDefinition, StockLevel, StockPosition
+from app.modules.reports.domain.ports import CustomersReadRepository, ReceiptsReadRepository, SalesReadRepository, StockReadRepository
 from app.modules.reports.domain.services import ReportCalculator
 from app.core.domain import DataOrigin
+
+
+PRICE_KPI_TOP_PRODUCTS = 5  # productos principales para comparar precio pagado y referencia
 
 
 @dataclass(frozen=True)
 class ReportQuery:
     from_date: date | None = None
     to_date: date | None = None
+    salesperson_code: str | None = None  # solo lo usa el reporte de ventas
 
 
 @dataclass(frozen=True)
@@ -96,6 +100,37 @@ class CategoryAmount:
 
 
 @dataclass(frozen=True)
+class PricePoint:
+    """Precio pagado frente a la referencia (último precio pagado a cualquier cliente). Estimado: no hay lista oficial."""
+
+    code: str
+    name: str
+    amount: Money
+    quantity: Decimal
+    reference_price: Money | None
+
+    @property
+    def average_price(self) -> Money | None:
+        return self.amount.divided_by(self.quantity) if self.quantity > 0 else None
+
+    @property
+    def below_reference_pct(self) -> Decimal | None:
+        paid = self.average_price
+        if paid is None or self.reference_price is None or self.reference_price.amount <= 0:
+            return None
+        return ((self.reference_price.amount - paid.amount) * 100 / self.reference_price.amount).quantize(Decimal("0.1"))
+
+
+def weighted_below_reference(points: list[PricePoint]) -> Decimal | None:
+    """Promedio ponderado por monto de cuánto bajo la referencia se vendió; solo productos con referencia."""
+    priced = [p for p in points if p.below_reference_pct is not None]
+    weight = sum((p.amount.amount for p in priced), start=Decimal(0))
+    if not weight:
+        return None
+    return (sum((p.below_reference_pct * p.amount.amount for p in priced), start=Decimal(0)) / weight).quantize(Decimal("0.1"))
+
+
+@dataclass(frozen=True)
 class SalesReport:
     period: Period
     monthly: list[MonthlyAmount]
@@ -104,6 +139,9 @@ class SalesReport:
     amount: Money | None
     order_count: int | None
     warnings: list[str]
+    price_points: list[PricePoint] = field(default_factory=list)
+    invoice_discount: Money | None = None
+    list_amount: Money | None = None
 
 
 class GetSalesReport:
@@ -115,8 +153,10 @@ class GetSalesReport:
             period = resolve_period(self.sales, query)
             if period.date_range is None:
                 return SalesReport(period, [], [], [], None, None, ["no_order_data", "no_cost_data"])
-            definition = SalesDefinition()
+            definition = SalesDefinition(salesperson_code=query.salesperson_code or None)
             monthly = self.sales.monthly_amounts(period.date_range, definition)
+            points = [PricePoint(*row) for row in self.sales.product_price_points(period.date_range, definition, PRICE_KPI_TOP_PRODUCTS)]
+            discount, list_amount = self.sales.invoice_discount(period.date_range, definition)
             products = [ProductAmount(code, name, amount) for code, name, amount
                         in self.sales.amounts_by_product(period.date_range, definition)]
             categories = [CategoryAmount(code, amount) for code, amount
@@ -125,7 +165,8 @@ class GetSalesReport:
                                Money.total([m.amount for m in monthly]) if monthly else None,
                                sum(m.order_count for m in monthly) if monthly else None,
                                ["no_cost_data", "order_statuses_provisional", "category_unconfirmed"] +
-                               (["no_order_data"] if not monthly else []))
+                               (["no_order_data"] if not monthly else []),
+                               points, discount, list_amount)
 
 
 @dataclass(frozen=True)
@@ -165,7 +206,7 @@ class GetCustomersReport:
 class StockReport:
     period: Period
     stock_as_of: date | None
-    items: list[StockLevel]
+    items: list[StockPosition]
     warnings: list[str]
 
 
@@ -181,8 +222,10 @@ class GetStockReport:
                 return StockReport(period, None, [], ["no_stock_data", "stock_balance_unconfirmed", "no_lot_data"])
             end = query.to_date or stock_as_of
             cutoff = min(end, stock_as_of)
-            items = self.stock.levels_at(cutoff.year, cutoff.month)
-            return StockReport(period, cutoff, items, ["stock_balance_unconfirmed", "no_lot_data"])
+            levels = self.stock.levels_at(cutoff.year, cutoff.month)
+            demand = self.sales.units_by_product(DateRange(ReportCalculator.twelve_month_start(cutoff), cutoff), SalesDefinition())
+            items = [StockPosition(level, *demand.get(level.product_code, (Decimal(0), None)), cutoff) for level in levels]
+            return StockReport(period, cutoff, items, ["stock_balance_unconfirmed", "no_lot_data", "no_cost_data"])
 
 
 @dataclass(frozen=True)
@@ -222,13 +265,50 @@ class GetSalespeopleReport:
                                      (["no_order_data"] if not rows else []))
 
 
-class GetReceivablesReport:
-    def __init__(self, sales: SalesReadRepository, uow: UnitOfWork) -> None:
-        self.sales, self.uow = sales, uow
+@dataclass(frozen=True)
+class MonthlyReceipts:
+    month: date
+    amount: Money
+    count: int
 
-    def execute(self, query: ReportQuery) -> Period:
+
+@dataclass(frozen=True)
+class Payer:
+    ruc: str
+    name: str
+    amount: Money
+    count: int
+
+
+@dataclass(frozen=True)
+class ReceivablesReport:
+    """Cobros registrados en el período (reales). La deuda pendiente y vencida no se calcula: los cobros no se
+    enlazan con pedidos ni facturas (aviso `receipts_not_linked`)."""
+
+    period: Period
+    collected: Money | None
+    receipt_count: int | None
+    monthly: list[MonthlyReceipts]
+    top_payers: list[Payer]
+    warnings: list[str]
+
+
+TOP_PAYERS = 10
+
+
+class GetReceivablesReport:
+    def __init__(self, sales: SalesReadRepository, uow: UnitOfWork, receipts: ReceiptsReadRepository | None = None) -> None:
+        self.sales, self.uow, self.receipts = sales, uow, receipts
+
+    def execute(self, query: ReportQuery) -> ReceivablesReport:
         with self.uow:
-            return resolve_period(self.sales, query)
+            period = resolve_period(self.sales, query)
+            if period.date_range is None or self.receipts is None:
+                return ReceivablesReport(period, None, None, [], [], ["receipts_not_linked"])
+            monthly = [MonthlyReceipts(*row) for row in self.receipts.monthly_receipts(period.date_range)]
+            payers = [Payer(*row) for row in self.receipts.top_payers(period.date_range, TOP_PAYERS)]
+            return ReceivablesReport(period, Money.total([m.amount for m in monthly]), sum(m.count for m in monthly),
+                                     monthly, payers, ["receipts_not_linked"])
 
 
 @dataclass(frozen=True)
@@ -261,11 +341,12 @@ class KpiReport:
 
 
 class GetKpis:
-    def __init__(self, summary: GetDashboardSummary) -> None:
-        self.summary = summary
+    def __init__(self, summary: GetDashboardSummary, sales: SalesReadRepository | None = None, uow: UnitOfWork | None = None) -> None:
+        self.summary, self.sales, self.uow = summary, sales, uow
 
     def execute(self, query: ReportQuery) -> KpiReport:
         result = self.summary.execute(query)
+        below = self._below_reference_pct(result.period)
         values = {"ordered_amount": result.amount.amount if result.amount else None,
                   "order_count": Decimal(result.order_count) if result.order_count is not None else None,
                   "average_order": result.average_order.amount if result.average_order else None,
@@ -273,7 +354,19 @@ class GetKpis:
                   "top_ten_share_pct": result.top_ten_share_pct}
         items = [Kpi(code, value, None, None, DataOrigin.REAL,
                      "no_order_data" if value is None else None) for code, value in values.items()]
+        if self.sales is not None:
+            items.append(Kpi("below_reference_pct", below, None, None, DataOrigin.ESTIMATED,
+                             "no_order_data" if below is None else None))
         return KpiReport(result.period, items, ["targets_unconfigured", *result.warnings])
+
+    def _below_reference_pct(self, period: Period) -> Decimal | None:
+        """Cuánto por debajo del último precio pagado (la referencia) se vendieron en promedio los 5 productos de mayor monto,
+        ponderado por monto. Estimado: no hay lista de precios oficial."""
+        if self.sales is None or self.uow is None or period.date_range is None:
+            return None
+        with self.uow:
+            points = [PricePoint(*row) for row in self.sales.product_price_points(period.date_range, SalesDefinition(), PRICE_KPI_TOP_PRODUCTS)]
+        return weighted_below_reference(points)
 
 
 class GetFunnelReport:

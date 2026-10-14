@@ -52,9 +52,10 @@ def get_kpis(
 @router.get("/reports/sales", response_model=SalesReportOut)
 def get_sales_report(
     date_from: date | None = Query(None, alias="from"), date_to: date | None = Query(None, alias="to"),
+    salesperson_code: str | None = Query(None, max_length=3, description="Solo los pedidos que tomó ese vendedor"),
     use_case: uc.GetSalesReport = Depends(deps.get_sales_report),
 ):
-    return SalesReportOut.from_domain(use_case.execute(_query(date_from, date_to)))
+    return SalesReportOut.from_domain(use_case.execute(uc.ReportQuery(date_from, date_to, (salesperson_code or "").strip() or None)))
 
 
 @router.get("/reports/customers", response_model=CustomersReportOut)
@@ -78,7 +79,7 @@ def get_receivables_report(
     date_from: date | None = Query(None, alias="from"), date_to: date | None = Query(None, alias="to"),
     use_case: uc.GetReceivablesReport = Depends(deps.get_receivables_report),
 ):
-    return ReceivablesReportOut(period=PeriodOut.from_domain(use_case.execute(_query(date_from, date_to))))
+    return ReceivablesReportOut.from_domain(use_case.execute(_query(date_from, date_to)))
 
 
 @router.get("/reports/salespeople", response_model=SalespeopleReportOut)

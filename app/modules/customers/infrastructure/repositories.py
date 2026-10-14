@@ -10,7 +10,15 @@ from app.infrastructure.db.repositories import queries
 from app.infrastructure.db.source_models import Customer as CustomerRow
 from app.infrastructure.db.source_models import Order as OrderRow
 from app.infrastructure.db.source_models import Salesperson as SalespersonRow
-from app.modules.customers.domain.entities import Contact, Customer, CustomerActivity, OrderSummary, ProductPurchase
+from app.modules.customers.domain.entities import (
+    Contact,
+    Customer,
+    CustomerActivity,
+    OrderSummary,
+    PeriodOrder,
+    PeriodProduct,
+    ProductPurchase,
+)
 from app.modules.customers.domain.value_objects import ContactOutcome, SalespersonScope
 from app.modules.customers.infrastructure.orm import ContactRow
 
@@ -97,6 +105,26 @@ class SqlAlchemyCustomerReadRepository:
             )
             for row in queries.customer_products(self._session, ruc.value, self._exclude)
         ]
+
+    def period_orders(self, ruc: Ruc, date_from: date, date_to: date) -> list[PeriodOrder]:
+        return [
+            PeriodOrder(row["order_no"], row["order_date"], row["salesperson_code"], Money(row["amount"]), Money(row["list_amount"]))
+            for row in queries.customer_period_orders(self._session, ruc.value, date_from, date_to, self._exclude)
+        ]
+
+    def period_products(self, ruc: Ruc, date_from: date, date_to: date) -> list[PeriodProduct]:
+        return [
+            PeriodProduct(row["product_code"], row["product_name"], row["category_code"], row["order_count"],
+                          row["quantity"], Money(row["amount"]), row["last_order_date"])
+            for row in queries.customer_period_products(self._session, ruc.value, date_from, date_to, self._exclude)
+        ]
+
+    def amounts_by_customer(self, date_from: date, date_to: date) -> dict[str, Money]:
+        rows = queries.amounts_by_customer(self._session, date_from, date_to, self._exclude)
+        return {row["ruc"]: Money(row["amount"]) for row in rows}
+
+    def reference_prices(self, product_codes: list[str], as_of: date) -> dict[str, Money]:
+        return {code: Money(price) for code, price in queries.last_paid_prices(self._session, product_codes, as_of).items()}
 
     def salesperson_names(self, codes: list[str]) -> dict[str, str]:
         if not codes:
