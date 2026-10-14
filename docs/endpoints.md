@@ -140,6 +140,30 @@ y `customer-levels` devuelve `missing_levels`. No hay valores por defecto invent
 | GET | /data-imports/{import_id} | Revisión: filas leídas y errores por línea | M | ✅ |
 | PATCH | /data-imports/{import_id} | Confirmar (actualiza e inserta, nunca borra) o cancelar. Body: `{"action": "confirm" \| "cancel"}` | M | ✅ |
 
+## Correo — `messaging`
+Gerencia define el correo compartido de origen en Ajustes › Correo. Para dominios propios, el dominio debe estar
+verificado en Resend. Cada usuario puede conectar su propio Gmail desde Perfil o el formulario de envío mediante
+Google OAuth (permiso `gmail.send`), sin entregar una contraseña SMTP. Para activar esta opción, habilita Gmail API,
+crea un cliente OAuth web y configura `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`,
+`GOOGLE_OAUTH_REDIRECT_URI`, `GOOGLE_OAUTH_TOKEN_KEY` y `FRONTEND_URL`. El URI de redirección debe coincidir
+exactamente con el autorizado en Google Cloud. La clave de tokens se genera como indica `.env.example` y debe
+conservarse al desplegar nuevas versiones. Los refresh tokens se cifran en la base de datos y cada conexión
+pertenece a un usuario. La configuración SMTP previa se conserva solo para un correo Gmail compartido ya autorizado.
+Sin `RESEND_API_KEY`, los envíos por Resend se simulan.
+El permiso `gmail.send` es sensible; para uso público Google puede exigir la verificación de la aplicación OAuth.
+
+| Método | Ruta | Para qué | Roles | Estado |
+|---|---|---|---|---|
+| GET | /email-senders | Remitentes permitidos y si su proveedor está configurado | M, S | ✅ |
+| POST | /email-senders | Agregar remitente (dirección o dominio) | M | ✅ |
+| PUT | /email-senders/{sender_id} | Editar remitente o marcarlo por defecto | M | ✅ |
+| DELETE | /email-senders/{sender_id} | Quitar remitente | M | ✅ |
+| GET | /gmail/connection | Estado de la conexión Gmail del usuario autenticado | M, S | ✅ |
+| GET | /gmail/connect | Iniciar autorización con Google; devuelve URL de autorización | M, S | ✅ |
+| GET | /gmail/callback | Recibir autorización de Google y regresar a la app | Google | ✅ |
+| DELETE | /gmail/connection | Desconectar Gmail del usuario autenticado | M, S | ✅ |
+| POST | /emails | Enviar: `sender_id=null` usa el Gmail propio; un ID usa el correo compartido. Para, asunto, mensaje y adjuntos en base64 | M, S | ✅ |
+
 ## General
 | Método | Ruta | Para qué | Roles | Estado |
 |---|---|---|---|---|

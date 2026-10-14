@@ -2859,6 +2859,360 @@
         }
       }
     },
+    "/api/v1/gmail/connection": {
+      "get": {
+        "tags": [
+          "correo"
+        ],
+        "summary": "Gmail Connection",
+        "operationId": "gmail_connection_api_v1_gmail_connection_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GmailConnectionOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "correo"
+        ],
+        "summary": "Gmail Disconnect",
+        "operationId": "gmail_disconnect_api_v1_gmail_connection_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/gmail/connect": {
+      "get": {
+        "tags": [
+          "correo"
+        ],
+        "summary": "Gmail Connect",
+        "operationId": "gmail_connect_api_v1_gmail_connect_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "return_path",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "/reportes",
+              "title": "Return Path"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GmailAuthorizationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/gmail/callback": {
+      "get": {
+        "tags": [
+          "correo"
+        ],
+        "summary": "Gmail Callback",
+        "operationId": "gmail_callback_api_v1_gmail_callback_get",
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "State"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/email-senders": {
+      "get": {
+        "tags": [
+          "correo"
+        ],
+        "summary": "List Senders",
+        "description": "Remitentes permitidos y si su proveedor está configurado.",
+        "operationId": "list_senders_api_v1_email_senders_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailSetupOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "correo"
+        ],
+        "summary": "Add Sender",
+        "description": "Agrega una cuenta Gmail o una dirección de un dominio verificado en Resend.",
+        "operationId": "add_sender_api_v1_email_senders_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SenderIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SenderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/email-senders/{sender_id}": {
+      "put": {
+        "tags": [
+          "correo"
+        ],
+        "summary": "Update Sender",
+        "operationId": "update_sender_api_v1_email_senders__sender_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sender_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sender Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SenderIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SenderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "correo"
+        ],
+        "summary": "Delete Sender",
+        "operationId": "delete_sender_api_v1_email_senders__sender_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sender_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sender Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/emails": {
+      "post": {
+        "tags": [
+          "correo"
+        ],
+        "summary": "Send Email",
+        "description": "Envía con Gmail o Resend desde un remitente permitido.",
+        "operationId": "send_email_api_v1_emails_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailSentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -3036,6 +3390,31 @@
           "items"
         ],
         "title": "AtRiskFollowUpOut"
+      },
+      "AttachmentIn": {
+        "properties": {
+          "file_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "File Name"
+          },
+          "content_base64": {
+            "type": "string",
+            "title": "Content Base64"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type",
+            "default": "application/pdf"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_name",
+          "content_base64"
+        ],
+        "title": "AttachmentIn"
       },
       "Body_stage_import_api_v1_data_imports_post": {
         "properties": {
@@ -4783,6 +5162,133 @@
         ],
         "title": "DormantTypeCountsOut"
       },
+      "EmailIn": {
+        "properties": {
+          "sender_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sender Id",
+            "description": "Vacío: enviar desde la cuenta Gmail conectada por este usuario"
+          },
+          "from_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Email",
+            "description": "Obligatorio si el remitente es un dominio (@mederi.pe)"
+          },
+          "to": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "To"
+          },
+          "reply_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reply To"
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Subject"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 20000,
+            "title": "Body"
+          },
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/AttachmentIn"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Attachments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "to",
+          "subject",
+          "body"
+        ],
+        "title": "EmailIn"
+      },
+      "EmailSentOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "sent (el proveedor lo aceptó) o simulated (sin clave de Resend)"
+          },
+          "from_email": {
+            "type": "string",
+            "title": "From Email"
+          },
+          "to": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "To"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "from_email",
+          "to"
+        ],
+        "title": "EmailSentOut"
+      },
+      "EmailSetupOut": {
+        "properties": {
+          "senders": {
+            "items": {
+              "$ref": "#/components/schemas/SenderOut"
+            },
+            "type": "array",
+            "title": "Senders"
+          },
+          "provider_configured": {
+            "type": "boolean",
+            "title": "Provider Configured",
+            "description": "True si el proveedor del remitente predeterminado está configurado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "senders",
+          "provider_configured"
+        ],
+        "title": "EmailSetupOut"
+      },
       "FollowUpBucketOut": {
         "properties": {
           "outcome": {
@@ -4892,6 +5398,44 @@
           "period"
         ],
         "title": "FunnelReportOut"
+      },
+      "GmailAuthorizationOut": {
+        "properties": {
+          "authorization_url": {
+            "type": "string",
+            "title": "Authorization Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "authorization_url"
+        ],
+        "title": "GmailAuthorizationOut"
+      },
+      "GmailConnectionOut": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "available",
+          "email"
+        ],
+        "title": "GmailConnectionOut"
       },
       "HTTPValidationError": {
         "properties": {
@@ -6690,6 +7234,69 @@
           "buckets"
         ],
         "title": "SalespersonFollowUpOut"
+      },
+      "SenderIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Nombre que ve quien recibe, por ejemplo «Mederi Pharma»"
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Address",
+            "description": "ventas@mederi.pe (dirección verificada) o @mederi.pe (dominio autenticado)"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "address"
+        ],
+        "title": "SenderIn"
+      },
+      "SenderOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "is_domain": {
+            "type": "boolean",
+            "title": "Is Domain",
+            "description": "True: se puede enviar desde cualquier dirección de ese dominio"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "address",
+          "is_domain",
+          "is_default"
+        ],
+        "title": "SenderOut"
       },
       "SessionCreateIn": {
         "properties": {
