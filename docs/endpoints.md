@@ -65,12 +65,17 @@ Un vendedor solo ve su cartera: pedir un cliente ajeno responde 403 `outside_por
 ## Productos y cotizaciones — `quotations`
 | Método | Ruta | Para qué | Roles | Estado |
 |---|---|---|---|---|
-| GET | /products | Buscar productos. Filtros: search, family | M, S | ⏳ |
-| GET | /products/{code} | Un producto con su precio de referencia | M, S | ⏳ |
-| POST | /quotation-previews | Calcular totales, IGV y margen sin guardar | M, S | ⏳ |
-| GET | /quotations | Lista. Filtros: status, ruc, from, to | M, S | ⏳ |
-| POST | /quotations | Emitir. Si requiere aprobación, solo un M puede confirmarla (`approval_confirmed`) | M, S | ⏳ |
-| GET | /quotations/{quotation_id} | Detalle con líneas | M, S | ⏳ |
+| GET | /products | Buscar productos veterinarios activos. Filtros: search, family; paginado | M, S | ✅ |
+| GET | /products/{code} | Un producto con su último precio pagado sin IGV (estimated; null si falta) | M, S | ✅ |
+| POST | /quotation-previews | Calcular totales, IGV y margen sin guardar; exige reglas en Ajustes | M, S | ✅ |
+| GET | /quotations | Lista paginada. Filtros: status, ruc, from, to; cartera forzada para S | M, S | ✅ |
+| POST | /quotations | Emitir. Si requiere aprobación, solo un M puede confirmarla (`approval_confirmed` y nota) | M, S | ✅ |
+| GET | /quotations/{quotation_id} | Detalle con líneas, limitado a la cartera para S | M, S | ✅ |
+
+Solo se cotizan productos veterinarios activos con un precio pagado no bonificado en un pedido no cancelado.
+El precio de referencia es el importe de la última línea dividido entre su cantidad y lleva origen `estimated`.
+Sin precio, la vista previa responde `reference_price_unavailable`; sin costos, `margin_pct=null` y aviso `no_cost_data`.
+La emisión recalcula la vista previa, no confía en importes enviados por la web. Las cotizaciones emitidas son inmutables.
 
 ## Predicción — `prediction`
 | Método | Ruta | Para qué | Roles | Estado |
