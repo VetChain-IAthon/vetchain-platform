@@ -65,3 +65,8 @@ class LevelThresholds:
             raise BusinessRuleError("Los umbrales no pueden ser negativos.", "invalid_thresholds")
         if self.min_amount_a < self.min_amount_b:
             raise BusinessRuleError("El umbral de A debe ser mayor o igual que el de B.", "invalid_thresholds")
+
+
+def missing_levels(rules: "list[CustomerLevelRule]") -> tuple[Level, ...]:
+    configured = {rule.level for rule in rules}
+    return tuple(level for level in Level if level not in configured)

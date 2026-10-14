@@ -1,11 +1,27 @@
 -- Generado por python -m scripts.export_ddl. No editar a mano.
 
-CREATE TABLE customer_tiers (
-	tier VARCHAR(1) NOT NULL, 
+CREATE TABLE customer_levels (
+	level VARCHAR(1) NOT NULL, 
 	max_discount_pct NUMERIC(5, 2) NOT NULL, 
 	margin_pct NUMERIC(5, 2) NOT NULL, 
 	credit_days INTEGER NOT NULL, 
-	PRIMARY KEY (tier)
+	PRIMARY KEY (level)
+);
+
+CREATE TABLE level_thresholds (
+	id SERIAL NOT NULL, 
+	min_amount_b NUMERIC(14, 2) NOT NULL, 
+	min_amount_a NUMERIC(14, 2) NOT NULL, 
+	PRIMARY KEY (id)
+);
+
+CREATE TABLE pricing_settings (
+	id SERIAL NOT NULL, 
+	igv_rate_pct NUMERIC(5, 2) NOT NULL, 
+	quotation_validity_days INTEGER NOT NULL, 
+	min_margin_pct NUMERIC(5, 2) NOT NULL, 
+	promo_margin_cut_pct NUMERIC(5, 2) NOT NULL, 
+	PRIMARY KEY (id)
 );
 
 CREATE TABLE products (
@@ -66,11 +82,13 @@ CREATE TABLE users (
 	id SERIAL NOT NULL, 
 	email VARCHAR(200) NOT NULL, 
 	password_hash VARCHAR(300) NOT NULL, 
+	full_name VARCHAR(150) NOT NULL, 
+	phone VARCHAR(40), 
 	role VARCHAR(20) NOT NULL, 
-	sales_rep_code VARCHAR(3), 
+	salesperson_code VARCHAR(3), 
 	active BOOLEAN NOT NULL, 
 	PRIMARY KEY (id), 
-	FOREIGN KEY(sales_rep_code) REFERENCES salespeople (code)
+	FOREIGN KEY(salesperson_code) REFERENCES salespeople (code)
 );
 
 CREATE UNIQUE INDEX ix_users_email ON users (email);
@@ -87,13 +105,6 @@ CREATE TABLE contacts (
 );
 
 CREATE INDEX ix_contacts_ruc ON contacts (ruc);
-
-CREATE TABLE customer_rebates (
-	ruc VARCHAR(15) NOT NULL, 
-	rebate_pct NUMERIC(5, 2) NOT NULL, 
-	PRIMARY KEY (ruc), 
-	FOREIGN KEY(ruc) REFERENCES customers (ruc)
-);
 
 CREATE TABLE orders (
 	order_no VARCHAR(20) NOT NULL, 
@@ -117,21 +128,6 @@ CREATE INDEX ix_orders_order_date ON orders (order_date);
 CREATE INDEX ix_orders_ruc ON orders (ruc);
 
 CREATE INDEX ix_orders_salesperson_code ON orders (salesperson_code);
-
-CREATE TABLE quotes (
-	id SERIAL NOT NULL, 
-	ruc VARCHAR(15) NOT NULL, 
-	user_id INTEGER NOT NULL, 
-	status VARCHAR(20) NOT NULL, 
-	discount_pct NUMERIC(5, 2) NOT NULL, 
-	total NUMERIC(14, 2) NOT NULL, 
-	created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
-	PRIMARY KEY (id), 
-	FOREIGN KEY(ruc) REFERENCES customers (ruc), 
-	FOREIGN KEY(user_id) REFERENCES users (id)
-);
-
-CREATE INDEX ix_quotes_ruc ON quotes (ruc);
 
 CREATE TABLE receipts (
 	receipt_no VARCHAR(20) NOT NULL, 
@@ -175,13 +171,3 @@ CREATE TABLE order_lines (
 CREATE INDEX ix_order_lines_order_no ON order_lines (order_no);
 
 CREATE INDEX ix_order_lines_product_code ON order_lines (product_code);
-
-CREATE TABLE quote_lines (
-	quote_id INTEGER NOT NULL, 
-	product_code VARCHAR(20) NOT NULL, 
-	quantity NUMERIC(12, 2) NOT NULL, 
-	unit_price NUMERIC(14, 2) NOT NULL, 
-	PRIMARY KEY (quote_id, product_code), 
-	FOREIGN KEY(quote_id) REFERENCES quotes (id), 
-	FOREIGN KEY(product_code) REFERENCES products (code)
-);

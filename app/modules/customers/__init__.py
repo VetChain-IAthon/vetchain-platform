@@ -1,2 +1,1 @@
-"""Alertas de clientes dormidos y registro de contactos."""
-from app.modules.customers.router import router  # noqa: F401
+"""Clientes, alertas de clientes dormidos y contactos."""

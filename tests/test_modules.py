@@ -1,14 +1,24 @@
-from app.modules import MODULES
+"""Rutas generales: /health, rutas del contrato aún pendientes (501) y errores de ruta."""
+from fastapi.testclient import TestClient
 
 
-def test_health(client):
-    r = client.get("/health")
-    assert r.status_code == 200
-    assert set(r.json()["modules"]) == set(MODULES)
+def test_health_needs_no_session(client: TestClient):
+    assert client.get("/health").json() == {"status": "ok"}
 
 
-def test_each_module_returns_status(client):
-    for name in MODULES:
-        r = client.get(f"/api/{name}/status")
-        assert r.status_code == 200, name
-        assert r.json()["module"] == name
+def test_pending_routes_answer_501_after_auth_and_role(client, login):
+    assert client.get("/api/v1/customers").status_code == 401
+    seller = login("salesperson")
+    response = client.get("/api/v1/customers", headers=seller)
+    assert response.status_code == 501
+    assert response.json()["error"]["code"] == "not_implemented"
+    assert client.get("/api/v1/reports/kpis", headers=seller).status_code == 403  # solo gerencia
+    manager = login("manager")
+    assert client.get("/api/v1/customers/20111111111/orders", headers=manager).status_code == 501
+    assert client.patch("/api/v1/import-suggestions/1", headers=manager).status_code == 501
+
+
+def test_unknown_route_uses_standard_error(client):
+    response = client.get("/api/v1/no-existe")
+    assert response.status_code == 404
+    assert response.json() == {"error": {"code": "not_found", "message": "La ruta no existe.", "details": None}}

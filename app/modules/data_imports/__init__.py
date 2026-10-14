@@ -1,1 +1,1 @@
-"""Módulo data_imports (en construcción por capas; ver docs/capas.md)."""
+"""Carga de los 7 CSV de Defontana: validar, revisar y confirmar."""

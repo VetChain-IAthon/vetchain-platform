@@ -11,6 +11,17 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
     model_path: str = "models/model.json"
 
+    # Seed de usuarios (scripts/seed_users.py). Vacíos por defecto.
+    seed_manager_email: str = ""
+    seed_manager_password: str = ""
+    seed_manager_name: str = ""
+    seed_manager_phone: str = ""
+    seed_salesperson_email: str = ""
+    seed_salesperson_password: str = ""
+    seed_salesperson_name: str = ""
+    seed_salesperson_phone: str = ""
+    seed_salesperson_code: str = ""
+
     @property
     def database_url_sqlalchemy(self) -> str:
         """Neon y Render entregan postgres:// o postgresql://; SQLAlchemy con psycopg 3 pide postgresql+psycopg://."""

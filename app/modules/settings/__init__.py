@@ -1,1 +1,1 @@
-"""Módulo settings (en construcción por capas; ver docs/capas.md)."""
+"""Reglas del negocio que configura gerencia: precios, niveles de cliente y umbrales."""

@@ -1,2 +1,1 @@
-"""Probabilidad de recompra con el modelo XGBoost."""
-from app.modules.prediction.router import router  # noqa: F401
+"""Probabilidad de recompra (XGBoost) y pronóstico de demanda."""

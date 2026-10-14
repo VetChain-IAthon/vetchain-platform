@@ -15,7 +15,7 @@ Cubre la conexión, el ORM, las consultas y la carga de los 7 CSV de Defontana. 
 | Cargador de CSV con política de vacíos | `app/infrastructure/loaders/defontana_csv.py` | Hecho |
 | Script de carga | `python -m scripts.load_csv` (lee `data/`) | Hecho |
 | DDL de PostgreSQL | `docs/schema.postgres.sql` (`python -m scripts.export_ddl`) | Hecho, probado en PostgreSQL 18 |
-| Migraciones Alembic | `alembic/`, migración inicial `e811b35b030d` | Hecho. El esquema migrado es idéntico al DDL (comparado con `pg_dump`) |
+| Migraciones Alembic | `alembic/`: `e811b35b030d` (inicial) y `bc3d285b5ffb` (auth y settings) | Hecho. El esquema migrado es idéntico al DDL (comparado con `pg_dump`) y `alembic check` no detecta diferencias |
 | Repositorios de customers | `app/modules/customers/infrastructure/repositories.py` | Hecho (`CustomerReadRepository`) |
 | Repositorios de reports | `app/modules/reports/infrastructure/repositories.py` | Hecho (ventas por mes, por categoría, por cliente, stock) |
 | Repositorios del resto de módulos | `app/modules/*/infrastructure/` | Falta |
@@ -79,8 +79,8 @@ Reglas incorporadas:
 - `scripts/create_tables.py` queda solo para pruebas.
 
 ## 6. Siguientes tareas, en orden
-1. Capas de aplicación e interfaz de customers y reports sobre los repositorios que ya existen. Todavía no hay
-   endpoints: hacen falta `docs/endpoints.md`, `app/core/errors.py` y el prefijo `/api/v1`.
+1. Capas de aplicación e interfaz de customers y reports sobre los repositorios que ya existen (sus rutas ya están
+   registradas y responden 501; ver `docs/capas-aplicacion-presentacion.md`).
 2. Repositorios del resto de módulos.
 3. Cuando Mederi responda las dudas, renombrar las columnas "POR CONFIRMAR" en el ORM, el parser y
    `data_imports/domain/sources.py`, crear la migración y regenerar el DDL.

@@ -31,3 +31,9 @@ class TokenService(Protocol):
     def read(self, token: str) -> CurrentUser:
         """UnauthorizedError si el token no es válido o venció."""
         ...
+
+
+class SalespersonDirectory(Protocol):
+    """Vendedores de Defontana (solo lectura)."""
+
+    def exists(self, code: str) -> bool: ...
