@@ -3,7 +3,7 @@ from datetime import date
 from decimal import Decimal
 
 from app.core.domain import BusinessRuleError, Money, Ruc
-from app.modules.customers.domain.value_objects import ContactOutcome, Probability
+from app.modules.customers.domain.value_objects import ContactOutcome, Level, Probability
 
 
 @dataclass(frozen=True)
@@ -31,6 +31,17 @@ class CustomerActivity:
     @property
     def last_order_date(self) -> date | None:
         return max(self.order_dates) if self.order_dates else None
+
+
+@dataclass(frozen=True)
+class CustomerStanding:
+    """Cliente con su resumen de 12 meses. `level` es None mientras gerencia no defina los umbrales;
+    `last_order_date` es la del historial completo, no solo de los 12 meses."""
+
+    customer: Customer
+    activity_12m: CustomerActivity
+    last_order_date: date | None
+    level: Level | None
 
 
 @dataclass(frozen=True)

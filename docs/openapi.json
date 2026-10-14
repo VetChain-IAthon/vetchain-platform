@@ -283,6 +283,534 @@
         }
       }
     },
+    "/api/v1/customers": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "List Customers",
+        "description": "Cartera ordenada por monto de pedidos de 12 meses, con nivel y participación.",
+        "operationId": "list_customers_api_v1_customers_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Nombre o inicio del RUC",
+              "title": "Search"
+            },
+            "description": "Nombre o inicio del RUC"
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "A",
+                    "B",
+                    "C"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Level"
+            }
+          },
+          {
+            "name": "salesperson_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 3
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Solo gerencia; al vendedor se le fuerza el suyo",
+              "title": "Salesperson Code"
+            },
+            "description": "Solo gerencia; al vendedor se le fuerza el suyo"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerPageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{ruc}": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Get Customer",
+        "description": "Ficha del cliente con nivel, resumen de 12 meses e historial completo.",
+        "operationId": "get_customer_api_v1_customers__ruc__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{ruc}/orders": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "List Customer Orders",
+        "description": "Historial de pedidos (todos los estados), del más reciente al más antiguo.",
+        "operationId": "list_customer_orders_api_v1_customers__ruc__orders_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderPageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{ruc}/products": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "List Customer Products",
+        "description": "Productos veterinarios que compra, de mayor a menor monto.",
+        "operationId": "list_customer_products_api_v1_customers__ruc__products_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductPurchasesOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{ruc}/commercial-terms": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Get Commercial Terms",
+        "description": "Nivel del cliente y sus reglas: margen, descuento máximo y días de crédito.",
+        "operationId": "get_commercial_terms_api_v1_customers__ruc__commercial_terms_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommercialTermsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{ruc}/contacts": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "List Contacts",
+        "operationId": "list_contacts_api_v1_customers__ruc__contacts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactPageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Register Contact",
+        "description": "Registra que contactaste hoy al cliente y qué respondió.",
+        "operationId": "register_contact_api_v1_customers__ruc__contacts_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{ruc}/whatsapp-link": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Build Whatsapp Link",
+        "operationId": "build_whatsapp_link_api_v1_customers__ruc__whatsapp_link_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          },
+          {
+            "name": "message",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 1000
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Si no llega, se usa el mensaje sugerido",
+              "title": "Message"
+            },
+            "description": "Si no llega, se usa el mensaje sugerido"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsappLinkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/alerts": {
       "get": {
         "tags": [
@@ -362,196 +890,6 @@
         ],
         "summary": "Texto de IA que explica la alerta (solo cifras agregadas) (pendiente)",
         "operationId": "pending_get_alerts_alert_id_explanation_api_v1_alerts__alert_id__explanation_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/customers": {
-      "get": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Lista de clientes con filtros de nivel, estado, búsqueda y vendedor (pendiente)",
-        "operationId": "pending_get_customers_api_v1_customers_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/customers/{ruc}": {
-      "get": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Ficha del cliente con nivel y resumen de 12 meses (pendiente)",
-        "operationId": "pending_get_customers_ruc_api_v1_customers__ruc__get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/customers/{ruc}/orders": {
-      "get": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Historial de pedidos (pendiente)",
-        "operationId": "pending_get_customers_ruc_orders_api_v1_customers__ruc__orders_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/customers/{ruc}/products": {
-      "get": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Qué compra el cliente y con qué frecuencia (pendiente)",
-        "operationId": "pending_get_customers_ruc_products_api_v1_customers__ruc__products_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/customers/{ruc}/commercial-terms": {
-      "get": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Nivel, margen, descuento máximo y días de crédito (pendiente)",
-        "operationId": "pending_get_customers_ruc_commercial_terms_api_v1_customers__ruc__commercial_terms_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/customers/{ruc}/contacts": {
-      "get": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Registro de contactos (pendiente)",
-        "operationId": "pending_get_customers_ruc_contacts_api_v1_customers__ruc__contacts_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      },
-      "post": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Registrar un contacto y su resultado (pendiente)",
-        "operationId": "pending_post_customers_ruc_contacts_api_v1_customers__ruc__contacts_post",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/customers/{ruc}/whatsapp-link": {
-      "get": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Enlace wa.me con el mensaje sugerido (pendiente)",
-        "operationId": "pending_get_customers_ruc_whatsapp_link_api_v1_customers__ruc__whatsapp_link_get",
         "responses": {
           "501": {
             "description": "Endpoint del contrato aún no construido",
@@ -848,23 +1186,94 @@
         "tags": [
           "cotizaciones"
         ],
-        "summary": "Buscar productos para cotizar (pendiente)",
-        "operationId": "pending_get_products_api_v1_products_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Search Products",
+        "operationId": "search_products_api_v1_products_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "family",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 3
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Family"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductPageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/products/{code}": {
@@ -872,23 +1281,46 @@
         "tags": [
           "cotizaciones"
         ],
-        "summary": "Un producto con su precio de referencia (pendiente)",
-        "operationId": "pending_get_products_code_api_v1_products__code__get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Product",
+        "operationId": "get_product_api_v1_products__code__get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/quotation-previews": {
@@ -896,14 +1328,36 @@
         "tags": [
           "cotizaciones"
         ],
-        "summary": "Calcular totales, IGV y margen sin guardar (pendiente)",
-        "operationId": "pending_post_quotation_previews_api_v1_quotation_previews_post",
+        "summary": "Preview Quotation",
+        "operationId": "preview_quotation_api_v1_quotation_previews_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuotationPreviewIn"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
+          "200": {
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/QuotationPreviewOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -920,45 +1374,175 @@
         "tags": [
           "cotizaciones"
         ],
-        "summary": "Lista de cotizaciones con filtros (pendiente)",
-        "operationId": "pending_get_quotations_api_v1_quotations_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "List Quotations",
+        "operationId": "list_quotations_api_v1_quotations_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "issued",
+                    "converted",
+                    "expired"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "ruc",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ruc"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuotationPageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       },
       "post": {
         "tags": [
           "cotizaciones"
         ],
-        "summary": "Emitir una cotización (valida descuento y margen) (pendiente)",
-        "operationId": "pending_post_quotations_api_v1_quotations_post",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Issue Quotation",
+        "operationId": "issue_quotation_api_v1_quotations_post",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuotationIssueIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuotationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/quotations/{quotation_id}": {
@@ -966,23 +1550,46 @@
         "tags": [
           "cotizaciones"
         ],
-        "summary": "Detalle de una cotización con sus líneas (pendiente)",
-        "operationId": "pending_get_quotations_quotation_id_api_v1_quotations__quotation_id__get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Quotation",
+        "operationId": "get_quotation_api_v1_quotations__quotation_id__get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "quotation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Quotation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuotationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/prediction/model": {
@@ -1014,23 +1621,71 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Resumen semanal y cifras principales (pendiente)",
-        "operationId": "pending_get_dashboard_summary_api_v1_dashboard_summary_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Dashboard Summary",
+        "operationId": "dashboard_summary_api_v1_dashboard_summary_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardSummaryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/reports": {
@@ -1038,14 +1693,16 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Catálogo de reportes con el origen de sus datos (pendiente)",
-        "operationId": "pending_get_reports_api_v1_reports_get",
+        "summary": "List Reports",
+        "operationId": "list_reports_api_v1_reports_get",
         "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
+          "200": {
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ReportCatalogOut"
+                }
               }
             }
           }
@@ -1062,23 +1719,71 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Los KPIs con su estado (pendiente)",
-        "operationId": "pending_get_reports_kpis_api_v1_reports_kpis_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Kpis",
+        "operationId": "get_kpis_api_v1_reports_kpis_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KpiReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/reports/sales": {
@@ -1086,23 +1791,71 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Pedidos por mes, producto y categoría (pendiente)",
-        "operationId": "pending_get_reports_sales_api_v1_reports_sales_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Sales Report",
+        "operationId": "get_sales_report_api_v1_reports_sales_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/reports/customers": {
@@ -1110,23 +1863,71 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Concentración, maestro de clientes, en riesgo y dormidos (pendiente)",
-        "operationId": "pending_get_reports_customers_api_v1_reports_customers_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Customers Report",
+        "operationId": "get_customers_report_api_v1_reports_customers_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomersReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/reports/stock": {
@@ -1134,23 +1935,71 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Estado del stock (pendiente)",
-        "operationId": "pending_get_reports_stock_api_v1_reports_stock_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Stock Report",
+        "operationId": "get_stock_report_api_v1_reports_stock_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/reports/receivables": {
@@ -1158,23 +2007,71 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Deuda por antigüedad y nivel (estimada) (pendiente)",
-        "operationId": "pending_get_reports_receivables_api_v1_reports_receivables_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Receivables Report",
+        "operationId": "get_receivables_report_api_v1_reports_receivables_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceivablesReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/reports/salespeople": {
@@ -1182,23 +2079,71 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Pedidos de 12 meses y seguimiento de alertas por vendedor (pendiente)",
-        "operationId": "pending_get_reports_salespeople_api_v1_reports_salespeople_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Salespeople Report",
+        "operationId": "get_salespeople_report_api_v1_reports_salespeople_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalespeopleReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/reports/funnel": {
@@ -1206,23 +2151,71 @@
         "tags": [
           "panel y reportes"
         ],
-        "summary": "Embudo: alertas, contactos, cotizaciones, convertidas y monto recuperado (pendiente)",
-        "operationId": "pending_get_reports_funnel_api_v1_reports_funnel_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Funnel Report",
+        "operationId": "get_funnel_report_api_v1_reports_funnel_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FunnelReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/import-suggestions": {
@@ -1416,6 +2409,400 @@
   },
   "components": {
     "schemas": {
+      "CategoryAmountOut": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "amount"
+        ],
+        "title": "CategoryAmountOut"
+      },
+      "CommercialTermsOut": {
+        "properties": {
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "margin_pct": {
+            "type": "number",
+            "title": "Margin Pct"
+          },
+          "max_discount_pct": {
+            "type": "number",
+            "title": "Max Discount Pct"
+          },
+          "credit_days": {
+            "type": "integer",
+            "title": "Credit Days"
+          },
+          "amount_12m": {
+            "type": "number",
+            "title": "Amount 12M",
+            "description": "Monto de 12 meses con el que se calculó el nivel"
+          },
+          "data_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data As Of"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level",
+          "margin_pct",
+          "max_discount_pct",
+          "credit_days",
+          "amount_12m",
+          "data_as_of"
+        ],
+        "title": "CommercialTermsOut"
+      },
+      "ContactIn": {
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 1,
+            "title": "Outcome",
+            "description": "Qué respondió el cliente (las opciones se definen con Mederi)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "outcome"
+        ],
+        "title": "ContactIn"
+      },
+      "ContactOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome"
+          },
+          "contact_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Contact Date"
+          },
+          "alert_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ruc",
+          "user_id",
+          "outcome",
+          "contact_date",
+          "alert_id"
+        ],
+        "title": "ContactOut"
+      },
+      "ContactPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ContactOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "per_page"
+        ],
+        "title": "ContactPageOut"
+      },
+      "CustomerAmountOut": {
+        "properties": {
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "share_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share Pct"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruc",
+          "name",
+          "amount",
+          "share_pct"
+        ],
+        "title": "CustomerAmountOut"
+      },
+      "CustomerDetailOut": {
+        "properties": {
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "customer_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Type",
+            "description": "company | person | other"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
+          },
+          "salesperson_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salesperson Code"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level",
+            "description": "A, B o C; null mientras gerencia no defina los umbrales"
+          },
+          "amount_12m": {
+            "type": "number",
+            "title": "Amount 12M",
+            "description": "Pedidos de 12 meses, sin IGV, solo veterinarios"
+          },
+          "order_count_12m": {
+            "type": "integer",
+            "title": "Order Count 12M"
+          },
+          "last_order_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Order Date",
+            "description": "Último pedido en todo el historial"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "average_order_amount_12m": {
+            "type": "number",
+            "title": "Average Order Amount 12M"
+          },
+          "purchase_rhythm_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Rhythm Days",
+            "description": "Días promedio entre pedidos; null con menos de dos"
+          },
+          "lifetime_amount": {
+            "type": "number",
+            "title": "Lifetime Amount"
+          },
+          "lifetime_order_count": {
+            "type": "integer",
+            "title": "Lifetime Order Count"
+          },
+          "first_order_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Order Date"
+          },
+          "data_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data As Of"
+          },
+          "levels_configured": {
+            "type": "boolean",
+            "title": "Levels Configured"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruc",
+          "name",
+          "customer_type",
+          "region",
+          "salesperson_code",
+          "level",
+          "amount_12m",
+          "order_count_12m",
+          "last_order_date",
+          "phone",
+          "email",
+          "average_order_amount_12m",
+          "purchase_rhythm_days",
+          "lifetime_amount",
+          "lifetime_order_count",
+          "first_order_date",
+          "data_as_of",
+          "levels_configured"
+        ],
+        "title": "CustomerDetailOut"
+      },
       "CustomerLevelIn": {
         "properties": {
           "max_discount_pct": {
@@ -1512,6 +2899,455 @@
         ],
         "title": "CustomerLevelsOut"
       },
+      "CustomerListItemOut": {
+        "properties": {
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "customer_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Type",
+            "description": "company | person | other"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
+          },
+          "salesperson_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salesperson Code"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level",
+            "description": "A, B o C; null mientras gerencia no defina los umbrales"
+          },
+          "amount_12m": {
+            "type": "number",
+            "title": "Amount 12M",
+            "description": "Pedidos de 12 meses, sin IGV, solo veterinarios"
+          },
+          "order_count_12m": {
+            "type": "integer",
+            "title": "Order Count 12M"
+          },
+          "last_order_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Order Date",
+            "description": "Último pedido en todo el historial"
+          },
+          "share_pct": {
+            "type": "number",
+            "title": "Share Pct",
+            "description": "% del monto de 12 meses de la cartera visible"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruc",
+          "name",
+          "customer_type",
+          "region",
+          "salesperson_code",
+          "level",
+          "amount_12m",
+          "order_count_12m",
+          "last_order_date",
+          "share_pct"
+        ],
+        "title": "CustomerListItemOut"
+      },
+      "CustomerPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerListItemOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          },
+          "total_amount_12m": {
+            "type": "number",
+            "title": "Total Amount 12M"
+          },
+          "data_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data As Of",
+            "description": "Fecha del último pedido cargado: la ventana de 12 meses termina aquí"
+          },
+          "levels_configured": {
+            "type": "boolean",
+            "title": "Levels Configured"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "per_page",
+          "total_amount_12m",
+          "data_as_of",
+          "levels_configured"
+        ],
+        "title": "CustomerPageOut"
+      },
+      "CustomersReportOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "master_count": {
+            "type": "integer",
+            "title": "Master Count"
+          },
+          "active_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Count"
+          },
+          "no_orders_12m": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Orders 12M"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "top_ten_share_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Ten Share Pct"
+          },
+          "top_customers": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerAmountOut"
+            },
+            "type": "array",
+            "title": "Top Customers"
+          },
+          "at_risk_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "At Risk Count"
+          },
+          "dormant_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dormant Count"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "master_count",
+          "active_count",
+          "no_orders_12m",
+          "amount",
+          "top_ten_share_pct",
+          "top_customers",
+          "warnings"
+        ],
+        "title": "CustomersReportOut"
+      },
+      "DashboardSummaryOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "order_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Count"
+          },
+          "average_order": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Order"
+          },
+          "active_customers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Customers"
+          },
+          "top_ten_share_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Ten Share Pct"
+          },
+          "monthly": {
+            "items": {
+              "$ref": "#/components/schemas/MonthlyAmountOut"
+            },
+            "type": "array",
+            "title": "Monthly"
+          },
+          "top_customers": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerAmountOut"
+            },
+            "type": "array",
+            "title": "Top Customers"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "amount",
+          "order_count",
+          "average_order",
+          "active_customers",
+          "top_ten_share_pct",
+          "monthly",
+          "top_customers",
+          "warnings"
+        ],
+        "title": "DashboardSummaryOut"
+      },
+      "FunnelReportOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "alerts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alerts"
+          },
+          "contacts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contacts"
+          },
+          "quotations": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quotations"
+          },
+          "converted": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Converted"
+          },
+          "recovered_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovered Amount"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": [
+              "alerts_unavailable",
+              "conversion_unavailable"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "period"
+        ],
+        "title": "FunnelReportOut"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1524,6 +3360,100 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "KpiOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "data_origin": {
+            "type": "string",
+            "title": "Data Origin"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "value",
+          "target",
+          "status",
+          "data_origin",
+          "warning"
+        ],
+        "title": "KpiOut"
+      },
+      "KpiReportOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/KpiOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "items",
+          "warnings"
+        ],
+        "title": "KpiReportOut"
       },
       "LevelThresholdsIn": {
         "properties": {
@@ -1610,6 +3540,185 @@
         },
         "type": "object",
         "title": "MeUpdateIn"
+      },
+      "MonthlyAmountOut": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "format": "date",
+            "title": "Month"
+          },
+          "order_count": {
+            "type": "integer",
+            "title": "Order Count"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "dispatched_amount": {
+            "type": "number",
+            "title": "Dispatched Amount"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "order_count",
+          "amount",
+          "dispatched_amount"
+        ],
+        "title": "MonthlyAmountOut"
+      },
+      "OrderOut": {
+        "properties": {
+          "order_no": {
+            "type": "string",
+            "title": "Order No"
+          },
+          "order_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Order Date"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount",
+            "description": "Sin IGV (subtotal − descuento). Un pedido no es una venta facturada"
+          },
+          "total_with_tax": {
+            "type": "number",
+            "title": "Total With Tax"
+          },
+          "status_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Code",
+            "description": "T en tránsito, A almacén, C cancelado, D devuelto/entregado (por confirmar)"
+          },
+          "salesperson_code": {
+            "type": "string",
+            "title": "Salesperson Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "order_no",
+          "order_date",
+          "amount",
+          "total_with_tax",
+          "status_code",
+          "salesperson_code"
+        ],
+        "title": "OrderOut"
+      },
+      "OrderPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrderOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "per_page"
+        ],
+        "title": "OrderPageOut"
+      },
+      "PeriodOut": {
+        "properties": {
+          "from_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Date"
+          },
+          "to_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Date"
+          },
+          "data_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data As Of"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_date",
+          "to_date",
+          "data_as_of",
+          "warning"
+        ],
+        "title": "PeriodOut"
       },
       "PricingIn": {
         "properties": {
@@ -1710,6 +3819,946 @@
         ],
         "title": "PricingOut"
       },
+      "ProductAmountOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "amount"
+        ],
+        "title": "ProductAmountOut"
+      },
+      "ProductOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "family": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family"
+          },
+          "reference_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Price"
+          },
+          "reference_price_origin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "estimated"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Price Origin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "family",
+          "reference_price",
+          "reference_price_origin"
+        ],
+        "title": "ProductOut"
+      },
+      "ProductPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProductOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "per_page"
+        ],
+        "title": "ProductPageOut"
+      },
+      "ProductPurchaseOut": {
+        "properties": {
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "category_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Code"
+          },
+          "times_ordered": {
+            "type": "integer",
+            "title": "Times Ordered"
+          },
+          "total_quantity": {
+            "type": "number",
+            "title": "Total Quantity"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount",
+            "description": "Sin IGV y sin líneas bonificadas"
+          },
+          "last_order_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Last Order Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_code",
+          "product_name",
+          "category_code",
+          "times_ordered",
+          "total_quantity",
+          "amount",
+          "last_order_date"
+        ],
+        "title": "ProductPurchaseOut"
+      },
+      "ProductPurchasesOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProductPurchaseOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "ProductPurchasesOut"
+      },
+      "QuotationIssueIn": {
+        "properties": {
+          "ruc": {
+            "type": "string",
+            "maxLength": 15,
+            "minLength": 8,
+            "title": "Ruc"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/QuotationLineIn"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Lines"
+          },
+          "discount_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Discount Pct"
+          },
+          "approval_confirmed": {
+            "type": "boolean",
+            "title": "Approval Confirmed",
+            "default": false
+          },
+          "approval_note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruc",
+          "lines",
+          "discount_pct"
+        ],
+        "title": "QuotationIssueIn"
+      },
+      "QuotationLineIn": {
+        "properties": {
+          "product_code": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Product Code"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Quantity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_code",
+          "quantity"
+        ],
+        "title": "QuotationLineIn"
+      },
+      "QuotationLineOut": {
+        "properties": {
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity"
+          },
+          "unit_price": {
+            "type": "number",
+            "title": "Unit Price"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "estimated",
+            "title": "Data Origin",
+            "default": "estimated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_code",
+          "quantity",
+          "unit_price",
+          "amount"
+        ],
+        "title": "QuotationLineOut"
+      },
+      "QuotationOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "issued_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Issued On"
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date",
+            "title": "Valid Until"
+          },
+          "order_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order No"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/QuotationLineOut"
+            },
+            "type": "array",
+            "title": "Lines"
+          },
+          "discount_pct": {
+            "type": "number",
+            "title": "Discount Pct"
+          },
+          "subtotal": {
+            "type": "number",
+            "title": "Subtotal"
+          },
+          "discount_amount": {
+            "type": "number",
+            "title": "Discount Amount"
+          },
+          "net": {
+            "type": "number",
+            "title": "Net"
+          },
+          "igv": {
+            "type": "number",
+            "title": "Igv"
+          },
+          "total_with_tax": {
+            "type": "number",
+            "title": "Total With Tax"
+          },
+          "margin_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Pct"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "approval_required": {
+            "type": "boolean",
+            "title": "Approval Required"
+          },
+          "approval_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Approval Reasons"
+          },
+          "approval_confirmed": {
+            "type": "boolean",
+            "title": "Approval Confirmed"
+          },
+          "approval_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Note"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "estimated",
+            "title": "Data Origin",
+            "default": "estimated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ruc",
+          "user_id",
+          "status",
+          "issued_on",
+          "valid_until",
+          "order_no",
+          "lines",
+          "discount_pct",
+          "subtotal",
+          "discount_amount",
+          "net",
+          "igv",
+          "total_with_tax",
+          "margin_pct",
+          "warnings",
+          "approval_required",
+          "approval_reasons",
+          "approval_confirmed",
+          "approval_note"
+        ],
+        "title": "QuotationOut"
+      },
+      "QuotationPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/QuotationOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "per_page"
+        ],
+        "title": "QuotationPageOut"
+      },
+      "QuotationPreviewIn": {
+        "properties": {
+          "ruc": {
+            "type": "string",
+            "maxLength": 15,
+            "minLength": 8,
+            "title": "Ruc"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/QuotationLineIn"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Lines"
+          },
+          "discount_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Discount Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruc",
+          "lines",
+          "discount_pct"
+        ],
+        "title": "QuotationPreviewIn"
+      },
+      "QuotationPreviewOut": {
+        "properties": {
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "credit_days": {
+            "type": "integer",
+            "title": "Credit Days"
+          },
+          "max_discount_pct": {
+            "type": "number",
+            "title": "Max Discount Pct"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/QuotationLineOut"
+            },
+            "type": "array",
+            "title": "Lines"
+          },
+          "discount_pct": {
+            "type": "number",
+            "title": "Discount Pct"
+          },
+          "subtotal": {
+            "type": "number",
+            "title": "Subtotal"
+          },
+          "discount_amount": {
+            "type": "number",
+            "title": "Discount Amount"
+          },
+          "net": {
+            "type": "number",
+            "title": "Net"
+          },
+          "igv_rate_pct": {
+            "type": "number",
+            "title": "Igv Rate Pct"
+          },
+          "igv": {
+            "type": "number",
+            "title": "Igv"
+          },
+          "total_with_tax": {
+            "type": "number",
+            "title": "Total With Tax"
+          },
+          "margin_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Pct"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "approval_required": {
+            "type": "boolean",
+            "title": "Approval Required"
+          },
+          "approval_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Approval Reasons"
+          },
+          "quotation_validity_days": {
+            "type": "integer",
+            "title": "Quotation Validity Days"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "estimated",
+            "title": "Data Origin",
+            "default": "estimated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruc",
+          "level",
+          "credit_days",
+          "max_discount_pct",
+          "lines",
+          "discount_pct",
+          "subtotal",
+          "discount_amount",
+          "net",
+          "igv_rate_pct",
+          "igv",
+          "total_with_tax",
+          "margin_pct",
+          "warnings",
+          "approval_required",
+          "approval_reasons",
+          "quotation_validity_days"
+        ],
+        "title": "QuotationPreviewOut"
+      },
+      "ReceivablesReportOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "outstanding_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outstanding Amount"
+          },
+          "overdue_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overdue Amount"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": [
+              "receipts_not_linked"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "period"
+        ],
+        "title": "ReceivablesReportOut"
+      },
+      "ReportCatalogOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportEntryOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "default": 1
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page",
+            "default": 7
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ReportCatalogOut"
+      },
+      "ReportEntryOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "data_origin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Origin"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "path",
+          "data_origin",
+          "warning"
+        ],
+        "title": "ReportEntryOut"
+      },
+      "SalesReportOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "monthly": {
+            "items": {
+              "$ref": "#/components/schemas/MonthlyAmountOut"
+            },
+            "type": "array",
+            "title": "Monthly"
+          },
+          "products": {
+            "items": {
+              "$ref": "#/components/schemas/ProductAmountOut"
+            },
+            "type": "array",
+            "title": "Products"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryAmountOut"
+            },
+            "type": "array",
+            "title": "Categories"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "order_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Count"
+          },
+          "margin_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Pct"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "monthly",
+          "products",
+          "categories",
+          "amount",
+          "order_count",
+          "warnings"
+        ],
+        "title": "SalesReportOut"
+      },
+      "SalespeopleReportOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SalespersonAmountOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "amount",
+          "items",
+          "warnings"
+        ],
+        "title": "SalespeopleReportOut"
+      },
+      "SalespersonAmountOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "order_count": {
+            "type": "integer",
+            "title": "Order Count"
+          },
+          "customer_count": {
+            "type": "integer",
+            "title": "Customer Count"
+          },
+          "share_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share Pct"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "amount",
+          "order_count",
+          "customer_count",
+          "share_pct"
+        ],
+        "title": "SalespersonAmountOut"
+      },
       "SessionCreateIn": {
         "properties": {
           "email": {
@@ -1756,6 +4805,101 @@
           "user"
         ],
         "title": "SessionOut"
+      },
+      "StockItemOut": {
+        "properties": {
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "balance": {
+            "type": "number",
+            "title": "Balance"
+          },
+          "last_period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Last Period End"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          },
+          "warning": {
+            "type": "string",
+            "const": "stock_balance_unconfirmed",
+            "title": "Warning",
+            "default": "stock_balance_unconfirmed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_code",
+          "product_name",
+          "balance",
+          "last_period_end"
+        ],
+        "title": "StockItemOut"
+      },
+      "StockReportOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "stock_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stock As Of"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StockItemOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "stock_as_of",
+          "items",
+          "warnings"
+        ],
+        "title": "StockReportOut"
       },
       "UserCreateIn": {
         "properties": {
@@ -1983,6 +5127,24 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WhatsappLinkOut": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "message"
+        ],
+        "title": "WhatsappLinkOut"
       }
     },
     "securitySchemes": {

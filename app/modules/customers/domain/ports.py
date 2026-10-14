@@ -1,3 +1,5 @@
+from __future__ import annotations  # AlertRepository.list oculta al tipo list dentro de la clase
+
 from datetime import date
 from typing import Protocol
 
@@ -23,7 +25,17 @@ class CustomerReadRepository(Protocol):
 
     def search(self, text: str | None, scope: SalespersonScope, paging: Paging) -> Page[Customer]: ...
 
-    def all_in_scope(self, scope: SalespersonScope) -> list[Customer]: ...
+    def all_in_scope(self, scope: SalespersonScope, text: str | None = None) -> list[Customer]:
+        """Toda la cartera visible, filtrada por nombre o RUC si llega `text`."""
+        ...
+
+    def latest_order_date(self) -> date | None:
+        """Fecha de corte de los datos: el pedido más reciente cargado."""
+        ...
+
+    def last_order_dates(self, rucs: list[Ruc]) -> dict[Ruc, date]:
+        """Último pedido de cada cliente en todo el historial."""
+        ...
 
     def activity(self, rucs: list[Ruc], since: date) -> dict[Ruc, CustomerActivity]: ...
 
@@ -61,6 +73,10 @@ class ExplanationGateway(Protocol):
 
 
 class SettingsGateway(Protocol):
-    def level_thresholds(self) -> LevelThresholds: ...
+    def level_thresholds(self) -> LevelThresholds | None:
+        """None mientras gerencia no defina los umbrales."""
+        ...
 
-    def commercial_terms(self, level: Level) -> CommercialTerms: ...
+    def commercial_terms(self, level: Level) -> CommercialTerms:
+        """BusinessRuleError si faltan las reglas del nivel."""
+        ...
