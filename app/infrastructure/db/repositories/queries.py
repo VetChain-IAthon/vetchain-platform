@@ -47,6 +47,11 @@ def _date_filters(column, date_from: date | None, date_to: date | None) -> list:
     return filters
 
 
+def _seller(salesperson_code: str | None) -> list:
+    """Filtro opcional por el vendedor que tomó el pedido (orders.salesperson_code)."""
+    return [Order.salesperson_code == salesperson_code] if salesperson_code else []
+
+
 def _core_lines():
     """Pedidos unidos a sus líneas de productos veterinarios."""
     return (
@@ -140,6 +145,7 @@ def monthly_sales(
     date_from: date | None = None,
     date_to: date | None = None,
     exclude_statuses: Collection[str] = DEFAULT_EXCLUDED,
+    salesperson_code: str | None = None,
 ) -> list[Row]:
     """Pedidos por mes (solo veterinarios, sin IGV): cantidad de pedidos, monto y monto despachado (estado T)."""
     month = _month(session, Order.order_date).label("month")
@@ -148,7 +154,7 @@ def monthly_sales(
         func.count(func.distinct(Order.order_no)).label("order_count"),
         func.sum(OrderLine.line_total).label("amount"),
         func.sum(case((Order.is_dispatched.is_(True), OrderLine.line_total), else_=0)).label("dispatched_amount"),
-    ).where(*_date_filters(Order.order_date, date_from, date_to), OrderLine.is_bonus.is_(False))
+    ).where(*_date_filters(Order.order_date, date_from, date_to), OrderLine.is_bonus.is_(False), *_seller(salesperson_code))
     query = query.where(_counted(exclude_statuses))
     query = query.group_by(month).order_by(month)
     return [dict(row._mapping) for row in session.execute(query)]
@@ -235,13 +241,14 @@ def sales_by_category(
     date_from: date | None = None,
     date_to: date | None = None,
     exclude_statuses: Collection[str] = DEFAULT_EXCLUDED,
+    salesperson_code: str | None = None,
 ) -> list[Row]:
     """Monto pedido (sin IGV, solo veterinarios) por categoría de producto (category_code, POR CONFIRMAR)."""
     query = (
         _core_lines()
         .add_columns(Product.category_code, func.sum(OrderLine.line_total).label("amount"))
         .where(*_date_filters(Order.order_date, date_from, date_to), _counted(exclude_statuses),
-               OrderLine.is_bonus.is_(False))
+               OrderLine.is_bonus.is_(False), *_seller(salesperson_code))
         .group_by(Product.category_code)
         .order_by(desc("amount"), Product.category_code)
     )

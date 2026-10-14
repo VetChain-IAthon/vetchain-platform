@@ -26,6 +26,11 @@ def test_dashboard_and_sales_use_core_non_bonus_non_cancelled_orders(client, man
     assert sales["products"][0]["amount"] == 125
     assert sales["categories"] == [{"code": "001", "amount": 155, "data_origin": "real"}]
     assert "no_cost_data" in sales["warnings"]
+    assert sales["invoice_discount"] == 5 and sales["list_amount"] == 160  # P2: 10 % de descuento en la línea de 50
+    assert [(p["code"], p["below_reference_pct"]) for p in sales["price_points"]] == [("MED0000001", 7.4), ("MED0000002", -50.0)]
+    assert sales["below_reference_pct"] == -3.7
+    seller = client.get("/api/v1/reports/sales?salesperson_code=002", headers=manager).json()
+    assert seller["amount"] == 55 and seller["order_count"] == 2  # P2 y P4, que tomó el vendedor 002
 
     january = client.get("/api/v1/dashboard/summary?from=2025-01-01&to=2025-01-31", headers=manager).json()
     assert january["amount"] == 100 and january["order_count"] == 1

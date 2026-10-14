@@ -153,3 +153,4 @@ class SalesDefinition:
     def counts(self, order_status: str | None) -> bool:
         return order_status not in self.excluded_statuses
 
+    salesperson_code: str | None = None  # solo los pedidos que tomó ese vendedor; None = todos

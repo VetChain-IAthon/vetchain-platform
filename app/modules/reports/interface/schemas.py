@@ -83,6 +83,16 @@ class CategoryAmountOut(BaseModel):
     data_origin: Literal["real"] = "real"
 
 
+class PricePointOut(BaseModel):
+    code: str
+    name: str
+    quantity: JsonNumber
+    amount: JsonNumber = Field(description="Sin IGV, sin bonificadas")
+    average_price: JsonNumber | None
+    reference_price: JsonNumber | None = Field(description="Último precio pagado por cualquier cliente hasta el fin del período (estimado)")
+    below_reference_pct: JsonNumber | None
+
+
 class SalesReportOut(BaseModel):
     period: PeriodOut
     monthly: list[MonthlyAmountOut]
@@ -91,6 +101,10 @@ class SalesReportOut(BaseModel):
     amount: JsonNumber | None
     order_count: int | None
     margin_pct: JsonNumber | None = None
+    price_points: list[PricePointOut] = Field(default_factory=list, description="Los 5 productos de mayor monto: precio pagado frente a la referencia")
+    below_reference_pct: JsonNumber | None = Field(None, description="Promedio ponderado por monto de price_points (estimado)")
+    invoice_discount: JsonNumber | None = Field(None, description="Descuento de línea en factura del período, sin IGV")
+    list_amount: JsonNumber | None = Field(None, description="Monto antes del descuento de línea")
     warnings: list[str]
     data_origin: Literal["real"] = "real"
 
@@ -101,6 +115,13 @@ class SalesReportOut(BaseModel):
                    products=[ProductAmountOut(code=x.code, name=x.name, amount=x.amount.amount) for x in result.products],
                    categories=[CategoryAmountOut(code=x.code, amount=x.amount.amount) for x in result.categories],
                    amount=result.amount.amount if result.amount else None, order_count=result.order_count,
+                   price_points=[PricePointOut(code=p.code, name=p.name, quantity=p.quantity, amount=p.amount.amount,
+                                               average_price=p.average_price.amount if p.average_price else None,
+                                               reference_price=p.reference_price.amount if p.reference_price else None,
+                                               below_reference_pct=p.below_reference_pct) for p in result.price_points],
+                   below_reference_pct=uc.weighted_below_reference(result.price_points),
+                   invoice_discount=result.invoice_discount.amount if result.invoice_discount else None,
+                   list_amount=result.list_amount.amount if result.list_amount else None,
                    warnings=result.warnings)
 
 

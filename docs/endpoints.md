@@ -91,7 +91,7 @@ La emisión recalcula la vista previa, no confía en importes enviados por la we
 | GET | /dashboard/summary | Monto y pedidos de 12 meses, ticket, clientes, concentración y meses; alertas con aviso | M | ✅ |
 | GET | /reports | Catálogo de reportes con el origen de sus datos | M | ✅ |
 | GET | /reports/kpis | Valores disponibles sin metas ni estados inventados | M | ✅ parcial |
-| GET | /reports/sales | Pedidos por mes, producto y categoría; margen sin datos de costos | M | ✅ |
+| GET | /reports/sales | Pedidos por mes, producto y categoría; precio pagado frente a la referencia (5 principales) y descuento en factura; filtro salesperson_code; margen sin datos de costos | M | ✅ |
 | GET | /reports/customers | Concentración, maestro de clientes y top; riesgo y dormancia pendientes de reglas | M | ✅ parcial |
 | GET | /reports/stock | Saldo por producto al último cierre, con aviso de campo sin confirmar y sin lotes | M | ✅ parcial |
 | GET | /reports/receivables | Aviso: cobros y pedidos no se pueden enlazar | M | ✅ aviso |

@@ -1,5 +1,6 @@
 """Lectura agregada para reportes desde las tablas de Defontana (solo lectura)."""
 from datetime import date
+from decimal import Decimal
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
@@ -8,6 +9,10 @@ from app.core.domain import DateRange, Money
 from app.infrastructure.db.repositories import queries
 from app.infrastructure.db.source_models import Customer, Order, OrderLine, Product, Salesperson, StockBalance
 from app.modules.reports.domain.entities import MonthlyAmount, SalesDefinition, StockLevel
+
+
+def _seller(definition: SalesDefinition) -> list:
+    return [Order.salesperson_code == definition.salesperson_code] if definition.salesperson_code else []
 
 
 def _excluded(definition: SalesDefinition) -> tuple[str, ...]:
@@ -25,7 +30,8 @@ class SqlSalesReadRepository:
 
     def monthly_amounts(self, date_range: DateRange, definition: SalesDefinition) -> list[MonthlyAmount]:
         rows = queries.monthly_sales(
-            self._session, date_range.from_date, date_range.to_date, exclude_statuses=_excluded(definition)
+            self._session, date_range.from_date, date_range.to_date, exclude_statuses=_excluded(definition),
+            salesperson_code=definition.salesperson_code,
         )
         return [
             MonthlyAmount(
@@ -39,7 +45,8 @@ class SqlSalesReadRepository:
 
     def amounts_by_category(self, date_range: DateRange, definition: SalesDefinition) -> list[tuple[str, Money]]:
         rows = queries.sales_by_category(
-            self._session, date_range.from_date, date_range.to_date, exclude_statuses=_excluded(definition)
+            self._session, date_range.from_date, date_range.to_date, exclude_statuses=_excluded(definition),
+            salesperson_code=definition.salesperson_code,
         )
         return [(row["category_code"], Money(row["amount"])) for row in rows]
 
@@ -50,10 +57,52 @@ class SqlSalesReadRepository:
             .join(Product, Product.code == OrderLine.product_code)
             .where(Order.order_date >= date_range.from_date, Order.order_date <= date_range.to_date,
                    Product.is_core_product.is_(True), OrderLine.is_bonus.is_(False),
-                   or_(Order.status_code.is_(None), Order.status_code.not_in(tuple(definition.excluded_statuses))))
+                   or_(Order.status_code.is_(None), Order.status_code.not_in(tuple(definition.excluded_statuses))),
+                   *_seller(definition))
             .group_by(Product.code, Product.name).order_by(func.sum(OrderLine.line_total).desc(), Product.code)
         )
         return [(row.code, row.name, Money(row.amount)) for row in self._session.execute(query)]
+
+    def product_price_points(self, date_range: DateRange, definition: SalesDefinition, limit: int) -> list[tuple[str, str, Money, Decimal, Money | None]]:
+        query = (
+            select(Product.code, Product.name, func.sum(OrderLine.line_total).label("amount"), func.sum(OrderLine.quantity).label("quantity"))
+            .select_from(Order).join(OrderLine, OrderLine.order_no == Order.order_no)
+            .join(Product, Product.code == OrderLine.product_code)
+            .where(Order.order_date >= date_range.from_date, Order.order_date <= date_range.to_date,
+                   Product.is_core_product.is_(True), OrderLine.is_bonus.is_(False),
+                   or_(Order.status_code.is_(None), Order.status_code.not_in(tuple(definition.excluded_statuses))),
+                   *_seller(definition))
+            .group_by(Product.code, Product.name).order_by(func.sum(OrderLine.line_total).desc(), Product.code).limit(limit)
+        )
+        rows = list(self._session.execute(query))
+        references = queries.last_paid_prices(self._session, [row.code for row in rows], date_range.to_date)
+        return [(row.code, row.name, Money(row.amount), row.quantity, Money(references[row.code]) if row.code in references else None)
+                for row in rows]
+
+    def units_by_product(self, date_range: DateRange, definition: SalesDefinition) -> dict[str, tuple[Decimal, date]]:
+        query = (
+            select(OrderLine.product_code, func.sum(OrderLine.quantity).label("units"), func.max(Order.order_date).label("last_sale"))
+            .select_from(Order).join(OrderLine, OrderLine.order_no == Order.order_no)
+            .where(Order.order_date >= date_range.from_date, Order.order_date <= date_range.to_date, OrderLine.is_bonus.is_(False),
+                   or_(Order.status_code.is_(None), Order.status_code.not_in(tuple(definition.excluded_statuses))), *_seller(definition))
+            .group_by(OrderLine.product_code)
+        )
+        return {row.product_code: (row.units, row.last_sale) for row in self._session.execute(query)}
+
+    def invoice_discount(self, date_range: DateRange, definition: SalesDefinition) -> tuple[Money, Money]:
+        query = (
+            select(func.sum(OrderLine.line_total).label("amount"), func.sum(OrderLine.quantity * OrderLine.unit_price).label("list_amount"))
+            .select_from(Order).join(OrderLine, OrderLine.order_no == Order.order_no)
+            .join(Product, Product.code == OrderLine.product_code)
+            .where(Order.order_date >= date_range.from_date, Order.order_date <= date_range.to_date,
+                   Product.is_core_product.is_(True), OrderLine.is_bonus.is_(False),
+                   or_(Order.status_code.is_(None), Order.status_code.not_in(tuple(definition.excluded_statuses))),
+                   *_seller(definition))
+        )
+        row = self._session.execute(query).one()
+        amount, list_amount = Money(row.amount or 0), Money(row.list_amount or 0)
+        # Cada total de línea viene redondeado: sin descuentos, la resta puede dar unos céntimos negativos.
+        return max(list_amount - amount, Money.zero()), list_amount
 
     def amounts_by_salesperson(self, date_range: DateRange, definition: SalesDefinition) -> list[tuple[str, str, Money, int, int]]:
         query = (
