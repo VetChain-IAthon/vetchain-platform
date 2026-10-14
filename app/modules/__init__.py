@@ -4,6 +4,7 @@ from app.modules.customers.interface import router as customers_router
 from app.modules.data_imports.interface import router as data_imports_router
 from app.modules.explanations.interface import router as explanations_router
 from app.modules.import_planning.interface import router as import_planning_router
+from app.modules.messaging.interface import router as messaging_router
 from app.modules.prediction.interface import router as prediction_router
 from app.modules.quotations.interface import router as quotations_router
 from app.modules.reports.interface import router as reports_router
@@ -19,4 +20,5 @@ MODULES = {
     "reports": reports_router,
     "import_planning": import_planning_router,
     "data_imports": data_imports_router,
+    "messaging": messaging_router,
 }
