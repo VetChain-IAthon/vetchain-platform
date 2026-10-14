@@ -50,7 +50,7 @@ class ConversionMatcher:
             for order in orders
             if order.ruc == quotation.ruc and quotation.issued_on <= order.order_date <= quotation.valid_until
         ]
-        return min(candidates, key=lambda order: (order.order_date, order.order_id), default=None)
+        return min(candidates, key=lambda order: (order.order_date, order.order_no), default=None)
 
     @staticmethod
     def is_expired(quotation: Quotation, today: date) -> bool:

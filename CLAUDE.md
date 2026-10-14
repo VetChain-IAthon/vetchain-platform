@@ -43,18 +43,19 @@ Hay puntos abiertos en la sección 9 de `docs/capas.md`, entre ellos un ciclo de
 ## Datos
 Siete CSV de Mederi **sin encabezados**: clientes (1 330), pedidos (14 945), pedido_detalle (67 403),
 productos (114 códigos, 91 veterinarios), kardex (9 970), cobros (14 082), vendedores (6).
-En la base se llaman `customers`, `orders`, `order_lines`, `products`, `stock_balances`, `payments` y `salespeople`.
-Los nombres de columnas son **propuestos**. Pendiente confirmar con Mederi:
-- `stock_balances.balance` = stock mensual
-- `payments` (cobros) se enlazan por `order_id`
-- qué estados de `orders.status` cuentan como venta
-Más en `docs/base-de-datos.md`.
+Vienen del ERP Defontana. En la base se llaman `customers`, `orders`, `order_lines`, `products`, `stock_balances`,
+`receipts` y `salespeople` (ORM en `app/infrastructure/db/source_models.py`). Solo las escribe la carga de CSV (upsert,
+nunca borra); los módulos solo las leen. Guía de la capa: `docs/infraestructura.md`.
+- Mapa CSV → columna, columnas derivadas y política de campos vacíos: `docs/base-de-datos.md`.
+- Columnas `POR CONFIRMAR` y dudas abiertas: `docs/dudas-mederi.md`.
+- Montos sin IGV desde `order_lines.line_total`; solo productos veterinarios (`is_core_product`); bonificadas (`is_bonus`) no suman.
+- `receipts` no se enlaza con `orders`. Estados de pedido: T en tránsito, A almacén, C cancelado, D devuelto/entregado.
 
 ## Reglas de producto
 - Un pedido no es una venta facturada: cuidar nombres y textos.
 - Los datos que se devuelven indican su origen cuando aplica: `real`, `synthetic`, `estimated` o `simulated`.
 - No devolver cantidades de importación ni rentabilidad como confiables si faltan datos o costos: devolver un aviso.
-- Montos en soles (PEN). Guardar con `Numeric(12, 2)`.
+- Montos en soles (PEN). Importes `Numeric(14, 2)`, cantidades `Numeric(14, 4)`, precio unitario `Numeric(18, 10)`.
 - Roles: solo dos, `manager` (gerencia) y `salesperson` (vendedor). El vendedor solo opera sobre su cartera.
 
 ## Convenciones
@@ -68,14 +69,20 @@ Más en `docs/base-de-datos.md`.
 
 ## Comandos
 - Instalar: `pip install -r requirements.txt`
-- Crear tablas: `python -m scripts.create_tables`
+- Crear o actualizar tablas: `alembic upgrade head` (`scripts/create_tables.py` es solo para pruebas)
+- Nueva migración tras cambiar el ORM: `alembic revision --autogenerate -m "..."` y revisar el archivo generado
+- Cargar los CSV: `python -m scripts.load_csv` (lee `data/mederi-1-ventas.csv` … `mederi-7-vendedores.csv`)
+- Generar el DDL de PostgreSQL: `python -m scripts.export_ddl`
+- Integración con PostgreSQL: `POSTGRES_TEST_URL=postgresql://.../vetchain_test pytest tests/test_postgres_integration.py`
 - Correr: `uvicorn app.main:app --reload`
 - Probar: `pytest`
 
 ## Qué falta (en este orden sugerido)
-1. Resolver los puntos abiertos de `docs/capas.md` (sección 9) y guardar el contrato de endpoints en `docs/endpoints.md`.
-2. Bases compartidas: `app/core/errors.py`, shared_kernel, prefijo `/api/v1`, `tests/test_architecture.py`.
-3. `auth` en capas: sesiones, `/me` y `/users`, con los roles `manager`/`salesperson`.
-4. `data_imports`: validar, revisar y confirmar los 7 CSV.
-5. `settings`, `prediction` (`scripts/train_model.py`), `customers`, `explanations`, `quotations`, `reports`, `import_planning`.
-6. Cambiar `create_all` por migraciones (Alembic) antes de producción.
+Hecho: dominio de todos los módulos con shared_kernel y prueba de arquitectura; infraestructura de base de datos
+(ORM de Defontana, cargador, consultas, unidad de trabajo, DDL, Alembic); repositorios de lectura de customers y reports.
+Base local: PostgreSQL `VetChainDb` en localhost, migrada y con los CSV cargados (`.env`, ignorado por git).
+1. Resolver los puntos abiertos de `docs/capas.md` (secciones 9 y 10) y guardar el contrato de endpoints en `docs/endpoints.md`.
+2. `app/core/errors.py` y prefijo `/api/v1`.
+3. Capa de aplicación e interfaz de `auth`; luego `customers` y `reports` (sus repositorios ya existen).
+4. Repositorios y capas de `data_imports`, `settings`, `prediction`, `explanations`, `quotations`, `import_planning`.
+5. Producción: proyecto en Neon (misma región que Render), `DATABASE_URL` en Render, `alembic upgrade head` y carga de CSV.

@@ -8,7 +8,7 @@ from app.modules.customers.domain.value_objects import ContactOutcome, Probabili
 
 @dataclass(frozen=True)
 class Customer:
-    """Cliente de los CSV de Mederi (solo lectura). `salesperson_code` es el vendedor de su último pedido."""
+    """Cliente de los CSV de Defontana (solo lectura). `salesperson_code` es el vendedor asignado en la ficha del cliente."""
 
     ruc: Ruc
     name: str
@@ -35,22 +35,24 @@ class CustomerActivity:
 
 @dataclass(frozen=True)
 class OrderSummary:
-    """Un pedido no es una venta facturada."""
+    """Un pedido no es una venta facturada. `amount` es sin IGV (subtotal − descuento)."""
 
-    order_id: str
+    order_no: str
     order_date: date
-    total: Money
-    status: str | None
-    salesperson_code: str | None
+    amount: Money
+    total_with_tax: Money
+    status_code: str | None
+    salesperson_code: str
 
 
 @dataclass(frozen=True)
 class ProductPurchase:
     product_code: str
     product_name: str
-    family: str | None
+    category_code: str | None
     times_ordered: int
     total_quantity: Decimal
+    amount: Money  # sin IGV, sin líneas bonificadas
     last_order_date: date
 
 

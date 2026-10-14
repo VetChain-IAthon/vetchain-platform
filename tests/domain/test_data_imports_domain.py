@@ -15,21 +15,29 @@ def test_there_are_seven_sources():
     assert set(SOURCES) == set(SourceName)
 
 
-def test_valid_order_row():
+ORDER = ["00203913", "2026-10-13", "20123456789", "VET SAC", "001", "OFICINA", "001", "100.50", "0.00", "18.09", "118.59", ""]
+
+
+def test_valid_order_row_uses_csv_positions():
     validator = CsvRowValidator(SOURCES[SourceName.ORDERS].schema)
-    record, error = validator.validate(1, ["P001", "13/10/2026", "20123456789", "", "100.50", "", "", "118.59", "A"])
+    record, error = validator.validate(1, ORDER)
     assert error is None
+    assert record["order_no"] == "00203913"
     assert record["order_date"] == date(2026, 10, 13)
+    assert record["salesperson_code"] == "001"
     assert record["subtotal"] == Decimal("100.50")
-    assert record["salesperson_code"] is None
+    assert record["status_code"] is None
+    assert "VET SAC" not in record.values()  # c3 repite el nombre del cliente: no se guarda
 
 
 def test_invalid_rows_report_line_and_reason():
     validator = CsvRowValidator(SOURCES[SourceName.STOCK_BALANCES].schema)
-    _, error = validator.validate(7, ["01", "2026"])
-    assert error.line == 7 and "5 columnas" in error.message
-    _, error = validator.validate(8, ["01", "dos mil", "10", "P1", "abc"])
-    assert "'year'" in error.message and "'balance'" in error.message
+    _, error = validator.validate(7, ["001", "2026"])
+    assert error.line == 7 and "6 columnas" in error.message
+    _, error = validator.validate(8, ["001", "dos mil", "10", "MED1", "", "abc"])
+    assert error.message == "year inválido; balance inválido."
+    _, error = validator.validate(9, ["001", "2026", "10", "", "", "1"])
+    assert error.message == "falta product_code."
 
 
 def _import(**overrides):

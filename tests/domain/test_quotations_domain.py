@@ -70,8 +70,8 @@ def test_conversion_and_expiration():
         OrderRef("O1", RUC, date(2026, 10, 5)),
     ]
     match = ConversionMatcher.match(quotation, orders)
-    assert match.order_id == "O1"
-    converted = quotation.convert(match.order_id)
+    assert match.order_no == "O1"
+    converted = quotation.convert(match.order_no)
     assert converted.status is QuotationStatus.CONVERTED
     with pytest.raises(ConflictError):
         converted.expire(date(2026, 12, 1))

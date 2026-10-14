@@ -5,7 +5,7 @@ from sqlalchemy import ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
-from app.core.mederi_tables import PEN
+from app.core.source_tables import PEN
 
 
 class Quote(Base):

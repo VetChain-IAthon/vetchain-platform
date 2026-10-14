@@ -54,7 +54,7 @@ class QuotationTotals:
 class OrderRef:
     """Pedido mínimo para enlazar conversiones."""
 
-    order_id: str
+    order_no: str
     ruc: Ruc
     order_date: date
 
@@ -72,7 +72,7 @@ class Quotation:
     issued_on: date
     valid_until: date
     status: QuotationStatus = QuotationStatus.ISSUED
-    order_id: str | None = None
+    order_no: str | None = None
     id: int | None = None
 
     @classmethod
@@ -107,9 +107,9 @@ class Quotation:
             valid_until=issued_on + timedelta(days=validity_days),
         )
 
-    def convert(self, order_id: str) -> "Quotation":
+    def convert(self, order_no: str) -> "Quotation":
         self._ensure_issued()
-        return replace(self, status=QuotationStatus.CONVERTED, order_id=order_id)
+        return replace(self, status=QuotationStatus.CONVERTED, order_no=order_no)
 
     def expire(self, today: date) -> "Quotation":
         self._ensure_issued()
