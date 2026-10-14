@@ -43,6 +43,10 @@ class CustomerReadRepository(Protocol):
 
     def products(self, ruc: Ruc) -> list[ProductPurchase]: ...
 
+    def salesperson_names(self, codes: list[str]) -> dict[str, str]:
+        """Nombre de cada vendedor por código."""
+        ...
+
 
 class AlertRepository(Protocol):
     def get(self, alert_id: int) -> Alert | None: ...
@@ -62,6 +66,10 @@ class ContactRepository(Protocol):
     def list_for(self, ruc: Ruc, paging: Paging) -> Page[Contact]: ...
 
     def contacted_alert_ids(self, alert_ids: list[int]) -> set[int]: ...
+
+    def latest_contacts(self, rucs: list[Ruc]) -> dict[Ruc, Contact]:
+        """El contacto más reciente de cada cliente que tenga alguno."""
+        ...
 
 
 class PredictionGateway(Protocol):

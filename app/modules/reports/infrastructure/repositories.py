@@ -87,11 +87,11 @@ class SqlCustomersReadRepository:
             return {}
         return dict(self._session.execute(select(Customer.ruc, Customer.name).where(Customer.ruc.in_(rucs))).all())
 
-    def amounts_by_customer(self, date_range: DateRange, definition: SalesDefinition) -> list[tuple[str, Money]]:
+    def amounts_by_customer(self, date_range: DateRange, definition: SalesDefinition) -> list[tuple[str, Money, int]]:
         rows = queries.amounts_by_customer(
             self._session, date_range.from_date, date_range.to_date, exclude_statuses=_excluded(definition)
         )
-        return [(row["ruc"], Money(row["amount"])) for row in rows]
+        return [(row["ruc"], Money(row["amount"]), row["order_count"]) for row in rows]
 
 
 class SqlStockReadRepository:

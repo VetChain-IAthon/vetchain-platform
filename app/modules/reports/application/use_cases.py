@@ -40,6 +40,7 @@ class CustomerAmount:
     name: str
     amount: Money
     share_pct: Decimal | None
+    order_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -69,15 +70,15 @@ class GetDashboardSummary:
             amounts = self.customers.amounts_by_customer(period.date_range, definition)
             total = Money.total([month.amount for month in monthly])
             count = sum(month.order_count for month in monthly)
-            names = self.customers.names_by_ruc([ruc for ruc, _ in amounts[:10]])
-            top = [CustomerAmount(ruc, names.get(ruc, ruc), amount, ReportCalculator.share(amount, total))
-                   for ruc, amount in amounts[:10]]
+            names = self.customers.names_by_ruc([ruc for ruc, *_ in amounts[:10]])
+            top = [CustomerAmount(ruc, names.get(ruc, ruc), amount, ReportCalculator.share(amount, total), orders)
+                   for ruc, amount, orders in amounts[:10]]
             warnings = ["alerts_unavailable", "order_statuses_provisional"]
             if not monthly:
                 warnings.append("no_order_data")
             return DashboardSummary(period, total if monthly else None, count if monthly else None,
                                     ReportCalculator.average(total, count), len(amounts),
-                                    ReportCalculator.share(Money.total([amount for _, amount in amounts[:10]]), total),
+                                    ReportCalculator.share(Money.total([amount for _, amount, _ in amounts[:10]]), total),
                                     monthly, top, warnings)
 
 
@@ -150,13 +151,13 @@ class GetCustomersReport:
             if period.date_range is None:
                 return CustomersReport(period, master, None, None, None, None, [], ["no_order_data", "risk_factors_unconfigured"])
             amounts = self.customers.amounts_by_customer(period.date_range, SalesDefinition())
-            total = Money.total([amount for _, amount in amounts])
-            names = self.customers.names_by_ruc([ruc for ruc, _ in amounts[:10]])
-            top = [CustomerAmount(ruc, names.get(ruc, ruc), amount, ReportCalculator.share(amount, total))
-                   for ruc, amount in amounts[:10]]
+            total = Money.total([amount for _, amount, _ in amounts])
+            names = self.customers.names_by_ruc([ruc for ruc, *_ in amounts[:10]])
+            top = [CustomerAmount(ruc, names.get(ruc, ruc), amount, ReportCalculator.share(amount, total), orders)
+                   for ruc, amount, orders in amounts[:10]]
             return CustomersReport(period, master, len(amounts), master - len(amounts),
                                    total if amounts else None,
-                                   ReportCalculator.share(Money.total([amount for _, amount in amounts[:10]]), total),
+                                   ReportCalculator.share(Money.total([amount for _, amount, _ in amounts[:10]]), total),
                                    top, ["risk_factors_unconfigured"] + (["no_order_data"] if not amounts else []))
 
 

@@ -404,6 +404,145 @@
         }
       }
     },
+    "/api/v1/customers/at-risk": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "List At Risk Customers",
+        "description": "Clientes que compran menos seguido de lo habitual, por dinero en juego. Factores provisionales (1,5× su ritmo).",
+        "operationId": "list_at_risk_customers_api_v1_customers_at_risk_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "salesperson_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 3
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Solo gerencia; al vendedor se le fuerza el suyo",
+              "title": "Salesperson Code"
+            },
+            "description": "Solo gerencia; al vendedor se le fuerza el suyo"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtRiskCustomerPageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/at-risk/follow-up": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Get At Risk Follow Up",
+        "description": "Por vendedor: clientes en riesgo y soles en juego según el resultado del último contacto (o sin contactar).",
+        "operationId": "get_at_risk_follow_up_api_v1_customers_at_risk_follow_up_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "salesperson_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 3
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Solo gerencia; al vendedor se le fuerza el suyo",
+              "title": "Salesperson Code"
+            },
+            "description": "Solo gerencia; al vendedor se le fuerza el suyo"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtRiskFollowUpOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/customers/dormant": {
       "get": {
         "tags": [
@@ -2529,6 +2668,151 @@
   },
   "components": {
     "schemas": {
+      "AtRiskCustomerOut": {
+        "properties": {
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "last_order_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Last Order Date"
+          },
+          "days_since_last_order": {
+            "type": "integer",
+            "title": "Days Since Last Order",
+            "description": "Días entre el último pedido y la fecha de corte de los datos"
+          },
+          "purchase_rhythm_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Rhythm Days",
+            "description": "Días promedio entre pedidos en 12 meses; null con menos de dos"
+          },
+          "money_at_stake": {
+            "type": "number",
+            "title": "Money At Stake",
+            "description": "Pedido promedio de 12 meses, sin IGV"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruc",
+          "name",
+          "last_order_date",
+          "days_since_last_order",
+          "purchase_rhythm_days",
+          "money_at_stake"
+        ],
+        "title": "AtRiskCustomerOut"
+      },
+      "AtRiskCustomerPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AtRiskCustomerOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          },
+          "data_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data As Of"
+          },
+          "at_risk_factor": {
+            "type": "number",
+            "title": "At Risk Factor",
+            "description": "Veces el ritmo de compra a partir de las cuales el cliente está en riesgo"
+          },
+          "default_rhythm_days": {
+            "type": "number",
+            "title": "Default Rhythm Days",
+            "description": "Ritmo usado cuando el cliente tiene menos de dos pedidos"
+          },
+          "warning": {
+            "type": "string",
+            "const": "risk_factors_provisional",
+            "title": "Warning",
+            "default": "risk_factors_provisional"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "estimated",
+            "title": "Data Origin",
+            "default": "estimated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "per_page",
+          "data_as_of",
+          "at_risk_factor",
+          "default_rhythm_days"
+        ],
+        "title": "AtRiskCustomerPageOut"
+      },
+      "AtRiskFollowUpOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SalespersonFollowUpOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "warning": {
+            "type": "string",
+            "const": "portfolio_provisional",
+            "title": "Warning",
+            "default": "portfolio_provisional"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "estimated",
+            "title": "Data Origin",
+            "default": "estimated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "AtRiskFollowUpOut"
+      },
       "CategoryAmountOut": {
         "properties": {
           "code": {
@@ -2725,6 +3009,11 @@
             ],
             "title": "Share Pct"
           },
+          "order_count": {
+            "type": "integer",
+            "title": "Order Count",
+            "description": "Pedidos del período"
+          },
           "data_origin": {
             "type": "string",
             "const": "real",
@@ -2737,7 +3026,8 @@
           "ruc",
           "name",
           "amount",
-          "share_pct"
+          "share_pct",
+          "order_count"
         ],
         "title": "CustomerAmountOut"
       },
@@ -3555,6 +3845,38 @@
           "person"
         ],
         "title": "DormantTypeCountsOut"
+      },
+      "FollowUpBucketOut": {
+        "properties": {
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome",
+            "description": "Resultado del último contacto; null = sin contactar"
+          },
+          "customer_count": {
+            "type": "integer",
+            "title": "Customer Count"
+          },
+          "money_at_stake": {
+            "type": "number",
+            "title": "Money At Stake",
+            "description": "Suma del pedido promedio de cada cliente, sin IGV"
+          }
+        },
+        "type": "object",
+        "required": [
+          "outcome",
+          "customer_count",
+          "money_at_stake"
+        ],
+        "title": "FollowUpBucketOut"
       },
       "FunnelReportOut": {
         "properties": {
@@ -5044,6 +5366,42 @@
           "share_pct"
         ],
         "title": "SalespersonAmountOut"
+      },
+      "SalespersonFollowUpOut": {
+        "properties": {
+          "salesperson_code": {
+            "type": "string",
+            "title": "Salesperson Code"
+          },
+          "salesperson_name": {
+            "type": "string",
+            "title": "Salesperson Name"
+          },
+          "customer_count": {
+            "type": "integer",
+            "title": "Customer Count"
+          },
+          "money_at_stake": {
+            "type": "number",
+            "title": "Money At Stake"
+          },
+          "buckets": {
+            "items": {
+              "$ref": "#/components/schemas/FollowUpBucketOut"
+            },
+            "type": "array",
+            "title": "Buckets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "salesperson_code",
+          "salesperson_name",
+          "customer_count",
+          "money_at_stake",
+          "buckets"
+        ],
+        "title": "SalespersonFollowUpOut"
       },
       "SessionCreateIn": {
         "properties": {

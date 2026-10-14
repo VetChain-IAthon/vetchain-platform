@@ -14,6 +14,8 @@ from app.modules.customers.interface.schemas import (
     ContactPageOut,
     CustomerDetailOut,
     CustomerListItemOut,
+    AtRiskCustomerPageOut,
+    AtRiskFollowUpOut,
     CustomerPageOut,
     DormantCustomerPageOut,
     OrderOut,
@@ -49,6 +51,28 @@ def list_customers(
         total_amount_12m=result.total_amount_12m.amount, data_as_of=result.data_as_of,
         levels_configured=result.levels_configured,
     )
+
+
+@router.get("/customers/at-risk", response_model=AtRiskCustomerPageOut)
+def list_at_risk_customers(
+    salesperson_code: str | None = Query(None, max_length=3, description="Solo gerencia; al vendedor se le fuerza el suyo"),
+    page: int = Page,
+    per_page: int = PerPage,
+    user: SessionUser = Depends(any_role),
+    use_case: uc.ListAtRiskCustomers = Depends(deps.get_list_at_risk_customers),
+):
+    """Clientes que compran menos seguido de lo habitual, por dinero en juego. Factores provisionales (1,5× su ritmo)."""
+    return AtRiskCustomerPageOut.from_result(use_case.execute(uc.scope_for(user, salesperson_code), Paging(page, per_page)))
+
+
+@router.get("/customers/at-risk/follow-up", response_model=AtRiskFollowUpOut)
+def get_at_risk_follow_up(
+    salesperson_code: str | None = Query(None, max_length=3, description="Solo gerencia; al vendedor se le fuerza el suyo"),
+    user: SessionUser = Depends(any_role),
+    use_case: uc.GetAtRiskFollowUp = Depends(deps.get_at_risk_follow_up),
+):
+    """Por vendedor: clientes en riesgo y soles en juego según el resultado del último contacto (o sin contactar)."""
+    return AtRiskFollowUpOut.from_result(use_case.execute(uc.scope_for(user, salesperson_code)))
 
 
 @router.get("/customers/dormant", response_model=DormantCustomerPageOut)

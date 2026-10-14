@@ -112,3 +112,39 @@ def test_dormant_customers(client, manager, db):
     companies = client.get("/api/v1/customers/dormant?customer_type=company", headers=manager).json()
     assert [i["ruc"] for i in companies["items"]] == ["20333333333"] and companies["type_counts"]["all"] == 2
     assert client.get("/api/v1/customers/dormant?customer_type=x", headers=manager).status_code == 422
+
+
+def test_at_risk_customers(client, manager):
+    # Corte 2025-03-01. VET UNO: pedidos el 10-01 y 15-02 (ritmo 36 días), última hace 14 días: activo.
+    # MARIA: un solo pedido el 01-03 (ritmo por defecto 30 días), 0 días: activo.
+    body = client.get("/api/v1/customers/at-risk", headers=manager).json()
+    assert body["total"] == 0 and body["items"] == []
+    assert body["data_origin"] == "estimated" and body["warning"] == "risk_factors_provisional"
+    assert body["at_risk_factor"] == 1.5 and body["default_rhythm_days"] == 30
+
+
+def test_at_risk_customer_listed(client, manager, db):
+    from app.infrastructure.loaders.defontana_csv import load_source
+    from tests.defontana_sample import SPEC
+
+    # Pedidos cada 10 días; el último, 20 días antes del corte (2× su ritmo): en riesgo.
+    load_source(db, SPEC["customers"], [["20444444444", "VET RIESGO S.A.C.", "AV. 4", "", "", "002", "X", "015", "LIMA", "006", "", "001", "0.00", "0.00", "1", "0.00"]])
+    orders = [("R1", "2025-01-20", "40.00"), ("R2", "2025-01-30", "40.00"), ("R3", "2025-02-09", "40.00")]
+    load_source(db, SPEC["orders"], [[no, day, "20444444444", "VET RIESGO", "002", "ANA", "001", amount, "0.00", "7.20", "47.20", "T"] for no, day, amount in orders])
+    load_source(db, SPEC["order_lines"], [[no, day, "20444444444", "002", "1", "MED0000001", "X", "001", "1", "1", "1", "40.0000000000", "0.00", "40.00"] for no, day, _ in orders])
+    db.commit()
+
+    item, = client.get("/api/v1/customers/at-risk", headers=manager).json()["items"]
+    assert item["ruc"] == "20444444444" and item["days_since_last_order"] == 20
+    assert item["purchase_rhythm_days"] == 10 and item["money_at_stake"] == 40
+
+    def follow_up():
+        body = client.get("/api/v1/customers/at-risk/follow-up", headers=manager).json()
+        assert body["data_origin"] == "estimated" and body["warning"] == "portfolio_provisional"
+        return body["items"]
+
+    seller, = follow_up()
+    assert seller["salesperson_code"] == "002" and seller["salesperson_name"] == "Ana Rios"
+    assert seller["buckets"] == [{"outcome": None, "customer_count": 1, "money_at_stake": 40}]
+    client.post("/api/v1/customers/20444444444/contacts", headers=manager, json={"outcome": "Pidió cotización"})
+    assert follow_up()[0]["buckets"] == [{"outcome": "Pidió cotización", "customer_count": 1, "money_at_stake": 40}]

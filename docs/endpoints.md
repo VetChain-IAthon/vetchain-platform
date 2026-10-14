@@ -48,6 +48,8 @@ la app coincidan con las tablas de este documento, y `docs/openapi.json` se rege
 | Método | Ruta | Para qué | Roles | Estado |
 |---|---|---|---|---|
 | GET | /customers | Lista por monto de 12 meses. Filtros: level, search, salesperson_code (status llega con las alertas) | M, S | ✅ |
+| GET | /customers/at-risk | En riesgo: pasaron más de 1,5 veces su ritmo de compra sin pedir (factores provisionales), por dinero en juego | M, S | ✅ |
+| GET | /customers/at-risk/follow-up | Por vendedor: clientes en riesgo y soles en juego según el último contacto (o sin contactar) | M, S | ✅ |
 | GET | /customers/dormant | Sin pedidos en 12 meses (incluye a los que nunca pidieron), por monto histórico. Filtros: search, customer_type, salesperson_code | M, S | ✅ |
 | GET | /customers/{ruc} | Ficha con nivel y resumen de 12 meses | M, S | ✅ |
 | GET | /customers/{ruc}/orders | Historial de pedidos | M, S | ✅ |

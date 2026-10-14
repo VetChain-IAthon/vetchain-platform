@@ -25,6 +25,14 @@ def get_list_customers(db: Session = Depends(get_db)) -> uc.ListCustomers:
     return uc.ListCustomers(_customers(db), SettingsPublicGateway(), _uow(db))
 
 
+def get_list_at_risk_customers(db: Session = Depends(get_db)) -> uc.ListAtRiskCustomers:
+    return uc.ListAtRiskCustomers(_customers(db), _uow(db))
+
+
+def get_at_risk_follow_up(db: Session = Depends(get_db)) -> uc.GetAtRiskFollowUp:
+    return uc.GetAtRiskFollowUp(_customers(db), SqlAlchemyContactRepository(db), _uow(db))
+
+
 def get_list_dormant_customers(db: Session = Depends(get_db)) -> uc.ListDormantCustomers:
     return uc.ListDormantCustomers(_customers(db), _uow(db))
 
