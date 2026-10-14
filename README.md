@@ -33,8 +33,8 @@ pytest
 app/
   main.py            punto de entrada: registra los módulos
   core/              núcleo compartido: configuración, base de datos, seguridad
-  modules/           un módulo por carpeta (router, service, schemas, models)
-docs/                arquitectura, base de datos y módulos
+  modules/           un módulo por carpeta, en capas: domain, application, infrastructure, interface
+docs/                arquitectura, contrato de capas, base de datos y módulos
 prompts/             textos que se envían a Gemini
 scripts/             tareas sueltas: crear tablas, cargar CSV, entrenar el modelo
 models/              model.json del modelo de predicción
