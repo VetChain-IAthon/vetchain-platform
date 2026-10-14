@@ -58,7 +58,7 @@ la app coincidan con las tablas de este documento, y `docs/openapi.json` se rege
 | GET | /customers/{ruc}/contacts | Registro de contactos | M, S | ✅ |
 | POST | /customers/{ruc}/contacts | Registrar un contacto y su resultado | M, S | ✅ |
 | GET | /customers/{ruc}/whatsapp-link | Enlace wa.me con el mensaje sugerido | M, S | ✅ |
-| GET | /customers/{ruc}/brief | Ficha para reunión. Query: from, to, projection (month, semester, year) | M | ⏳ |
+| GET | /customers/{ruc}/brief | Ficha para reunión (interna). Query: from, to, projection (month, semester, year). Proyección, ganancia, ofertas, guion y cobranza van como avisos | M | ✅ |
 
 Fecha de corte: la ventana de 12 meses termina en el último pedido cargado (`data_as_of`), no en la fecha de hoy,
 porque los CSV son una foto. `level` es `null` (y `levels_configured` es `false`) mientras gerencia no defina los

@@ -148,3 +148,31 @@ def test_at_risk_customer_listed(client, manager, db):
     assert seller["buckets"] == [{"outcome": None, "customer_count": 1, "money_at_stake": 40}]
     client.post("/api/v1/customers/20444444444/contacts", headers=manager, json={"outcome": "Pidió cotización"})
     assert follow_up()[0]["buckets"] == [{"outcome": "Pidió cotización", "customer_count": 1, "money_at_stake": 40}]
+
+
+def test_customer_brief_uses_real_orders_and_flags_what_is_pending(client, manager, login):
+    body = client.get("/api/v1/customers/20111111111/brief", headers=manager).json()
+    assert body["date_from"] == "2024-03-02" and body["date_to"] == "2025-03-01" and body["projection"] == "month"
+    # P3 está cancelado y la revista no es veterinaria: no suman; P1 tiene una línea bonificada
+    assert body["amount"] == 145.0 and body["order_count"] == 2 and body["average_order_amount"] == 72.5
+    assert body["rank"] == 1 and body["ranked_customers"] == 2 and body["share_pct"] == 93.5
+    assert body["salesperson_name"] == "Oficina" and body["salesperson_share_pct"] == 69.0
+    assert body["purchase_rhythm_days"] == 36.0 and body["last_order_date"] == "2025-02-15"
+    assert body["days_since_last_order"] == 14 and body["days_late"] == 0
+    assert body["expected_next_order_date"] == "2025-03-23"
+    assert body["invoice_discount"] == 5.0 and body["list_amount"] == 150.0
+    assert len(body["monthly"]) == 13 and body["monthly"][-3] == {"month": "2025-01", "amount": 100.0, "order_count": 1}
+    first = body["products"][0]
+    assert first["product_code"] == "MED0000001" and first["quantity"] == 3 and first["average_price"] == 41.67
+    assert first["reference_price"] == 45.0 and first["below_reference_pct"] == 7.4
+    assert body["projected_amount"] is None and body["estimated_profit"] is None
+    assert {"projection_unavailable", "no_cost_data", "ai_unavailable", "thresholds_not_configured"} <= set(body["warnings"])
+
+    narrow = client.get("/api/v1/customers/20111111111/brief?from=2025-02-01&to=2025-02-28&projection=year", headers=manager).json()
+    assert narrow["amount"] == 45.0 and narrow["order_count"] == 1 and narrow["purchase_rhythm_days"] is None
+    assert narrow["projection"] == "year" and narrow["days_since_last_order"] == 13
+
+    bad = client.get("/api/v1/customers/20111111111/brief?from=2025-03-01&to=2025-01-01", headers=manager)
+    assert bad.status_code == 400 and bad.json()["error"]["code"] == "invalid_period"
+    assert client.get("/api/v1/customers/20111111111/brief?projection=week", headers=manager).status_code == 422
+    assert client.get("/api/v1/customers/20111111111/brief", headers=login("salesperson")).status_code == 403

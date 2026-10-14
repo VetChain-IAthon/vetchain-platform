@@ -68,6 +68,39 @@ class ProductPurchase:
 
 
 @dataclass(frozen=True)
+class PeriodOrder:
+    """Pedido de un período para la ficha de reunión: solo veterinarios, sin IGV y sin bonificadas.
+    `list_amount` es el monto antes del descuento de línea (cantidad × precio unitario)."""
+
+    order_no: str
+    order_date: date
+    salesperson_code: str
+    amount: Money
+    list_amount: Money
+
+    @property
+    def invoice_discount(self) -> Money:
+        return self.list_amount - self.amount
+
+
+@dataclass(frozen=True)
+class PeriodProduct:
+    """Lo que el cliente pidió de un producto en el período, sin bonificadas."""
+
+    product_code: str
+    product_name: str
+    category_code: str | None
+    order_count: int
+    quantity: Decimal
+    amount: Money
+    last_order_date: date
+
+    @property
+    def average_price(self) -> Money | None:
+        return self.amount.divided_by(self.quantity) if self.quantity > 0 else None
+
+
+@dataclass(frozen=True)
 class Alert:
     """Alerta diaria de un cliente que conviene contactar. Una por cliente y día."""
 

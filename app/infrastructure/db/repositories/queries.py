@@ -276,3 +276,71 @@ def products_missing_from_catalog(session: Session) -> list[str]:
         .order_by(StockBalance.product_code)
     )
     return list(session.scalars(query))
+
+
+def customer_period_orders(
+    session: Session,
+    ruc: str,
+    date_from: date,
+    date_to: date,
+    exclude_statuses: Collection[str] = DEFAULT_EXCLUDED,
+) -> list[Row]:
+    """Pedidos de un cliente en el período (solo veterinarios, sin IGV, sin bonificadas), del más antiguo al más reciente.
+    `list_amount` es cantidad × precio unitario antes del descuento de línea: la diferencia es el descuento en factura."""
+    query = (
+        _core_lines()
+        .add_columns(
+            Order.order_no, Order.order_date, Order.salesperson_code,
+            func.sum(OrderLine.line_total).label("amount"),
+            func.sum(OrderLine.quantity * OrderLine.unit_price).label("list_amount"),
+        )
+        .where(Order.ruc == ruc, *_date_filters(Order.order_date, date_from, date_to), _counted(exclude_statuses),
+               OrderLine.is_bonus.is_(False))
+        .group_by(Order.order_no, Order.order_date, Order.salesperson_code)
+        .order_by(Order.order_date, Order.order_no)
+    )
+    return [dict(row._mapping) for row in session.execute(query)]
+
+
+def customer_period_products(
+    session: Session,
+    ruc: str,
+    date_from: date,
+    date_to: date,
+    exclude_statuses: Collection[str] = DEFAULT_EXCLUDED,
+) -> list[Row]:
+    """Productos veterinarios de un cliente en el período, sin líneas bonificadas, de mayor a menor monto."""
+    query = (
+        _core_lines()
+        .add_columns(
+            Product.code.label("product_code"), Product.name.label("product_name"), Product.category_code,
+            func.count(func.distinct(Order.order_no)).label("order_count"),
+            func.sum(OrderLine.quantity).label("quantity"),
+            func.sum(OrderLine.line_total).label("amount"),
+            func.max(Order.order_date).label("last_order_date"),
+        )
+        .where(Order.ruc == ruc, *_date_filters(Order.order_date, date_from, date_to), _counted(exclude_statuses),
+               OrderLine.is_bonus.is_(False))
+        .group_by(Product.code, Product.name, Product.category_code)
+        .order_by(desc("amount"), Product.code)
+    )
+    return [dict(row._mapping) for row in session.execute(query)]
+
+
+def last_paid_prices(session: Session, product_codes: Collection[str], as_of: date | None = None) -> dict[str, Decimal]:
+    """Último precio pagado por unidad (total de línea ÷ cantidad, sin IGV) de cada producto, a cualquier cliente.
+    Es el mismo precio de referencia de las cotizaciones: estimado, no es un costo ni un precio de lista oficial."""
+    if not product_codes:
+        return {}
+    query = (
+        select(OrderLine.product_code, OrderLine.line_total, OrderLine.quantity)
+        .join(Order, Order.order_no == OrderLine.order_no)
+        .where(OrderLine.product_code.in_(list(product_codes)), OrderLine.is_bonus.is_(False), OrderLine.quantity > 0,
+               _counted(DEFAULT_EXCLUDED), *_date_filters(Order.order_date, None, as_of))
+        .order_by(Order.order_date.desc(), Order.order_no.desc(), OrderLine.id.desc())
+    )
+    prices: dict[str, Decimal] = {}
+    for row in session.execute(query):
+        if row.product_code not in prices:
+            prices[row.product_code] = (row.line_total / row.quantity).quantize(_CENT, rounding=ROUND_HALF_UP)
+    return prices

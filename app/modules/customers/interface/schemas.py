@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -298,3 +299,86 @@ class ContactPageOut(BaseModel):
 class WhatsappLinkOut(BaseModel):
     url: str
     message: str
+
+
+class BriefProductOut(BaseModel):
+    product_code: str
+    product_name: str
+    category_code: str | None = Field(description="Categoría de Defontana (POR CONFIRMAR)")
+    order_count: int
+    quantity: JsonNumber
+    amount: JsonNumber = Field(description="Sin IGV, sin bonificadas")
+    average_price: JsonNumber | None = Field(description="Precio pagado promedio por unidad, sin IGV")
+    reference_price: JsonNumber | None = Field(description="Último precio pagado por cualquier cliente (estimado)")
+    below_reference_pct: JsonNumber | None = Field(description="% bajo la referencia; negativo si pagó más")
+    last_order_date: date
+
+
+class BriefMonthOut(BaseModel):
+    month: str = Field(description="AAAA-MM")
+    amount: JsonNumber
+    order_count: int
+
+
+class CustomerBriefOut(BaseModel):
+    ruc: str
+    name: str
+    level: str | None = Field(description="Por el monto de 12 meses; null mientras gerencia no defina los umbrales")
+    credit_days: int | None
+    salesperson_code: str | None
+    salesperson_name: str | None
+    salesperson_share_pct: JsonNumber | None = Field(description="% del monto del período atendido por su vendedor asignado")
+    date_from: date
+    date_to: date
+    data_as_of: date | None
+    projection: Literal["month", "semester", "year"]
+    amount: JsonNumber = Field(description="Pedidos del período, sin IGV, solo veterinarios")
+    order_count: int
+    average_order_amount: JsonNumber
+    share_pct: JsonNumber = Field(description="% del monto de todos los clientes en el período")
+    rank: int | None
+    ranked_customers: int = Field(description="Clientes con pedidos en el período")
+    purchase_rhythm_days: JsonNumber | None
+    last_order_date: date | None
+    expected_next_order_date: date | None
+    days_since_last_order: int | None = Field(description="Hasta date_to")
+    days_late: int | None = Field(description="Días por encima de su ritmo de compra; 0 si va al día")
+    invoice_discount: JsonNumber = Field(description="Descuento de línea en los pedidos del período, sin IGV")
+    list_amount: JsonNumber = Field(description="Monto antes del descuento de línea")
+    monthly: list[BriefMonthOut]
+    order_dates: list[date]
+    products: list[BriefProductOut]
+    below_reference_pct: JsonNumber | None = Field(description="Promedio ponderado por monto, solo productos con referencia")
+    projected_amount: JsonNumber | None = Field(description="Siempre null hasta que exista el modelo de predicción")
+    estimated_profit: JsonNumber | None = Field(description="Siempre null hasta que haya costos validados")
+    warnings: list[str]
+    data_origin: DataOriginReal = "real"
+
+    @classmethod
+    def from_result(cls, brief: uc.CustomerBrief) -> "CustomerBriefOut":
+        customer = brief.customer
+        priced = [p for p in brief.products if p.below_reference_pct is not None]
+        weight = sum((p.purchase.amount.amount for p in priced), start=0)
+        below = (sum(p.below_reference_pct * p.purchase.amount.amount for p in priced) / weight).quantize(Decimal("0.1")) if weight else None
+        return cls(
+            ruc=customer.ruc.value, name=customer.name, level=brief.level.value if brief.level else None,
+            credit_days=brief.credit_days, salesperson_code=customer.salesperson_code,
+            salesperson_name=brief.salesperson_name, salesperson_share_pct=brief.salesperson_share_pct,
+            date_from=brief.date_from, date_to=brief.date_to, data_as_of=brief.data_as_of, projection=brief.projection,
+            amount=brief.amount.amount, order_count=brief.order_count, average_order_amount=brief.average_order_amount.amount,
+            share_pct=brief.share_pct, rank=brief.rank, ranked_customers=brief.ranked_customers,
+            purchase_rhythm_days=brief.rhythm.average_days if brief.rhythm else None,
+            last_order_date=brief.last_order_date, expected_next_order_date=brief.expected_next_order,
+            days_since_last_order=brief.days_since_last_order, days_late=brief.days_late,
+            invoice_discount=brief.invoice_discount.amount, list_amount=brief.list_amount.amount,
+            monthly=[BriefMonthOut(month=m.month, amount=m.amount.amount, order_count=m.order_count) for m in brief.monthly],
+            order_dates=list(brief.order_dates),
+            products=[BriefProductOut(
+                product_code=p.purchase.product_code, product_name=p.purchase.product_name, category_code=p.purchase.category_code,
+                order_count=p.purchase.order_count, quantity=p.purchase.quantity, amount=p.purchase.amount.amount,
+                average_price=p.purchase.average_price.amount if p.purchase.average_price else None,
+                reference_price=p.reference_price.amount if p.reference_price else None,
+                below_reference_pct=p.below_reference_pct, last_order_date=p.purchase.last_order_date,
+            ) for p in brief.products],
+            below_reference_pct=below, projected_amount=None, estimated_profit=None, warnings=list(brief.warnings),
+        )
