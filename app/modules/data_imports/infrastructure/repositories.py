@@ -2,6 +2,7 @@
 from __future__ import annotations  # el método list oculta al tipo list dentro de la clase
 
 import json
+import re
 from datetime import date
 
 from sqlalchemy import func, select
@@ -12,7 +13,7 @@ from app.core.domain import DataOrigin
 from app.infrastructure.db.source_models import Order, OrderLine, Product, Receipt, StockBalance
 from app.infrastructure.loaders.defontana_csv import load_source, spec_for, validate_source
 from app.modules.data_imports.domain.entities import DataImport, ImportStatus, RowError
-from app.modules.data_imports.domain.sources import SourceName
+from app.modules.data_imports.domain.sources import SOURCES, SourceName
 from app.modules.data_imports.infrastructure.orm import DataImportRow
 
 
@@ -88,11 +89,69 @@ class DefontanaSourceLoader:
         self._session = session
 
     def validate(self, source: SourceName, rows: list[list[str]]) -> tuple[int, list[RowError]]:
-        report = validate_source(self._session, spec_for(source.value), rows)
-        return report.rows_read, [RowError(line, reason) for line, reason in report.rejected_lines]
+        spec = spec_for(source.value)
+        report = validate_source(self._session, spec, rows)
+        return report.rows_read, [RowError(line, _friendly(SOURCES[source], spec, rows[line - 1], reason))
+                                  for line, reason in report.rejected_lines]
+
+    def existing_lines(self, source: SourceName, rows: list[list[str]]) -> set[int]:
+        spec = spec_for(source.value)
+        fields = {f.name: f for f in spec.fields}
+        keys = [k for k in spec.conflict_keys if k != "dup_seq"]  # detalle: la línea repetida se toma como la primera
+        columns = [getattr(spec.model, k) for k in keys]
+        existing = {tuple(str(v) for v in key) for key in self._session.execute(select(*columns))}
+        found = set()
+        for line, row in enumerate(rows, start=1):
+            try:
+                key = tuple(_normalize(row[fields[k].index].strip(), fields[k].kind) for k in keys)
+            except (IndexError, ValueError):
+                continue
+            if key in existing:
+                found.add(line)
+        return found
 
     def load(self, source: SourceName, rows: list[list[str]]) -> int:
         return load_source(self._session, spec_for(source.value), rows).rows_loaded
+
+
+def _normalize(value: str, kind: str) -> str:
+    """Las claves enteras (año, mes, línea) se comparan como número; los códigos de texto, tal cual (001 ≠ 1)."""
+    return str(int(value)) if kind == "int" else value
+
+
+_PARENT_FILES = {"salespeople": "vendedores", "customers": "clientes", "products": "productos", "orders": "pedidos"}
+_FORMATS = {"date": "usa el formato AAAA-MM-DD, por ejemplo 2026-04-21", "decimal": "usa punto decimal, por ejemplo 1250.50",
+            "int": "debe ser un número entero", "bool": "debe ser 1 (sí) o 0 (no)"}
+
+
+def _friendly(source, spec, row: list[str], reason: str) -> str:
+    """Traduce el motivo del cargador a un mensaje que diga qué pasó y cómo corregirlo, con el valor de la fila."""
+    fields = {f.name: f for f in spec.fields}
+
+    def value(name: str) -> str:
+        field = fields.get(name)
+        return row[field.index].strip() if field and field.index < len(row) else ""
+
+    match = re.fullmatch(r"(\w+) no existe en (\w+)", reason)
+    if match:
+        column, table = match.groups()
+        parent = _PARENT_FILES.get(table, table)
+        return (f"{source.header_for(column)} «{value(column)}» no existe en {parent}. "
+                f"Carga primero el archivo de {parent} o corrige el código.")
+    match = re.fullmatch(r"falta (\w+)", reason)
+    if match:
+        return f"Falta {source.header_for(match.group(1))}: es obligatorio."
+    match = re.fullmatch(r"(\w+) inválido", reason)
+    if match:
+        name = match.group(1)
+        hint = _FORMATS.get(fields[name].kind, "") if name in fields else ""
+        return f"Valor no válido en {source.header_for(name)} («{value(name)}»){f': {hint}' if hint else ''}."
+    match = re.fullmatch(r"se esperaban (\d+) columnas", reason)
+    if match:
+        return f"La fila trae {len(row)} columnas y se esperaban {match.group(1)}. Revisa comas de más o celdas combinadas."
+    if reason == "clave repetida en el archivo":
+        return "Esta fila repite el código de otra fila del mismo archivo. Deja solo una."
+    return reason[:1].upper() + reason[1:] + "."
 
 
 _DATES = {

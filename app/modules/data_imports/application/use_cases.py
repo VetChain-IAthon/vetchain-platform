@@ -75,6 +75,7 @@ class StageImport:
         rows = _read_rows(command.content)
         source.check_headers(rows[0])
         data_rows = rows[1:]
+        source.restore_leading_zeros(data_rows)
         if not data_rows:
             raise BusinessRuleError("El archivo solo trae encabezados; no hay filas para cargar.", "empty_file")
         with self.uow:

@@ -84,6 +84,31 @@ class DataSource:
     def file_name(self) -> str:
         return f"mederi-{self.number}-{FILE_SLUGS[self.name]}.csv"
 
+    def restore_leading_zeros(self, rows: list[list[str]]) -> int:
+        """Excel quita los ceros a la izquierda al abrir y guardar un CSV (008 → 8). Los códigos de Defontana tienen
+        ancho fijo, así que se reponen. Cambia las filas en su lugar y devuelve cuántos valores corrigió."""
+        fixed = 0
+        for row in rows:
+            for index, width in ZERO_PADDED[self.name].items():
+                if index < len(row):
+                    value = row[index].strip()
+                    if value.isdigit() and len(value) < width:
+                        row[index] = value.zfill(width)
+                        fixed += 1
+        return fixed
+
+    @property
+    def preview_columns(self) -> tuple[str, ...]:
+        return PREVIEW_COLUMNS[self.name]
+
+    def preview_values(self, row: list[str]) -> tuple[str, ...]:
+        return tuple(row[self.headers.index(h)].strip() if self.headers.index(h) < len(row) else "" for h in self.preview_columns)
+
+    def header_for(self, column_name: str) -> str:
+        """Encabezado del CSV de una columna interna (por ejemplo salesperson_code → codigo_vendedor)."""
+        column = next((c for c in self.schema.columns if c.name == column_name), None)
+        return self.headers[column.index] if column else column_name
+
     def check_headers(self, header_row: list[str]) -> None:
         """La primera fila del CSV debe traer los encabezados esperados, en el mismo orden (sin importar mayúsculas)."""
         found = tuple(value.strip().lower() for value in header_row)
@@ -154,6 +179,28 @@ HEADERS: dict[SourceName, tuple[str, ...]] = {
     SourceName.STOCK_BALANCES: ("codigo_almacen", "anio", "mes", "codigo_producto", "nombre_producto", "saldo"),
     SourceName.RECEIPTS: ("numero_cobro", "fecha", "ruc", "nombre_cliente", "tipo_documento", "numero_documento", "c6",
                           "medio_pago", "c8", "referencia", "monto", "fecha_aplicacion"),
+}
+
+# Columnas con código de ancho fijo en Defontana (posición → dígitos), para reponer ceros que quita Excel.
+ZERO_PADDED: dict[SourceName, dict[int, int]] = {
+    SourceName.SALESPEOPLE: {0: 3},
+    SourceName.CUSTOMERS: {5: 3, 7: 3, 9: 3, 11: 3},
+    SourceName.PRODUCTS: {3: 3, 5: 3},
+    SourceName.ORDERS: {0: 8, 4: 3, 6: 3},
+    SourceName.ORDER_LINES: {0: 8, 3: 3, 7: 3},
+    SourceName.STOCK_BALANCES: {0: 3},
+    SourceName.RECEIPTS: {0: 8, 4: 3, 5: 10, 6: 3, 7: 3, 8: 3},
+}
+
+# Columnas que se muestran en la vista previa de una carga (las que identifican cada fila).
+PREVIEW_COLUMNS: dict[SourceName, tuple[str, ...]] = {
+    SourceName.SALESPEOPLE: ("codigo", "nombre", "ubicacion", "activo"),
+    SourceName.CUSTOMERS: ("ruc", "nombre", "codigo_vendedor", "departamento", "telefono", "correo"),
+    SourceName.PRODUCTS: ("codigo", "nombre", "codigo_categoria", "activo"),
+    SourceName.ORDERS: ("numero_pedido", "fecha", "ruc", "nombre_cliente", "codigo_vendedor", "total", "estado"),
+    SourceName.ORDER_LINES: ("numero_pedido", "linea", "codigo_producto", "nombre_producto", "cantidad", "precio_unitario", "total_linea"),
+    SourceName.STOCK_BALANCES: ("codigo_almacen", "anio", "mes", "codigo_producto", "nombre_producto", "saldo"),
+    SourceName.RECEIPTS: ("numero_cobro", "fecha", "ruc", "nombre_cliente", "numero_documento", "monto"),
 }
 
 # Orden de carga: primero las tablas de las que dependen las demás (vendedores → clientes → pedidos → detalle…).

@@ -55,7 +55,23 @@ def test_cancel_wrong_headers_and_roles(client, manager, login):
     orders = ("numero_pedido,fecha,ruc,nombre_cliente,codigo_vendedor,nombre_vendedor,codigo_canal,subtotal,descuento,igv,total,estado\n"
               "P9,2025-03-05,20999999999,X,001,OFICINA,001,10.00,0.00,1.80,11.80,T\n")
     rejected = _upload(client, manager, "orders", orders).json()
-    assert rejected["valid_rows"] == 0 and rejected["errors"][0]["message"] == "ruc no existe en customers"
+    assert rejected["valid_rows"] == 0
+    assert rejected["errors"][0]["message"] == "ruc «20999999999» no existe en clientes. Carga primero el archivo de clientes o corrige el código."
     no_rows = client.patch(f"/api/v1/data-imports/{rejected['id']}", headers=manager, json={"action": "confirm"})
     assert no_rows.status_code == 400 and no_rows.json()["error"]["code"] == "no_valid_rows"
     assert client.get("/api/v1/data-sources", headers=login("salesperson")).status_code == 403
+
+
+def test_restores_leading_zeros_lost_in_excel(client, manager):
+    # Excel guarda 002 como 2 y 015 como 15: los códigos se reponen con su ancho fijo.
+    header = ("ruc,nombre,direccion,telefono,correo,codigo_vendedor,nombre_vendedor,codigo_departamento,departamento,"
+              "codigo_segmento,c10,codigo_condicion,c12,c13,activo,c15\n")
+    row = "20990000013,PET NORTE,CAL. 88,,,2,ANA,15,LIMA,1,,1,0.00,0.00,1,0.00\n"
+    staged = _upload(client, manager, "customers", header + row).json()
+    assert staged["valid_rows"] == 1 and staged["errors"] == []
+    client.patch(f"/api/v1/data-imports/{staged['id']}", headers=manager, json={"action": "confirm"})
+    assert client.get("/api/v1/customers/20990000013", headers=manager).json()["salesperson_code"] == "002"
+    bad_date = ("numero_pedido,fecha,ruc,nombre_cliente,codigo_vendedor,nombre_vendedor,codigo_canal,subtotal,descuento,igv,total,estado\n"
+                "77,21/04/2026,20990000013,X,2,ANA,1,10.00,0.00,1.80,11.80,T\n")
+    error, = _upload(client, manager, "orders", bad_date).json()["errors"]
+    assert error["message"] == "Valor no válido en fecha («21/04/2026»): usa el formato AAAA-MM-DD, por ejemplo 2026-04-21."
