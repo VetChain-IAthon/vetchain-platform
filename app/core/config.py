@@ -8,6 +8,14 @@ class Settings(BaseSettings):
     jwt_secret: str = "cambia-esto-por-un-valor-largo-y-aleatorio"
     jwt_expire_minutes: int = 480
     gemini_api_key: str = ""
+    resend_api_key: str = ""  # sin clave, los correos se simulan (se registran pero no salen)
+    gmail_smtp_email: str = ""  # cuenta Gmail que enviará los mensajes
+    gmail_smtp_app_password: str = ""  # contraseña de aplicación de Google, no la contraseña de inicio de sesión
+    google_oauth_client_id: str = ""
+    google_oauth_client_secret: str = ""
+    google_oauth_redirect_uri: str = "http://localhost:8000/api/v1/gmail/callback"
+    google_oauth_token_key: str = ""  # clave Fernet para cifrar tokens de actualización
+    frontend_url: str = "http://localhost:3000"
     cors_origins: str = "http://localhost:3000"
     model_path: str = "models/model.json"
 

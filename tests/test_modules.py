@@ -14,7 +14,9 @@ def test_pending_routes_answer_501_after_auth_and_role(client, login):
     assert response.json()["error"]["code"] == "not_implemented"
     assert client.get("/api/v1/reports/kpis", headers=seller).status_code == 403  # solo gerencia
     manager = login("manager")
-    assert client.patch("/api/v1/import-suggestions/1", headers=manager).status_code == 501
+    assert client.get("/api/v1/import-suggestions", headers=manager).status_code == 200
+    assert client.patch("/api/v1/import-suggestions/1", headers=manager,
+                        json={"decision": "approved"}).status_code == 404
 
 
 def test_unknown_route_uses_standard_error(client):
