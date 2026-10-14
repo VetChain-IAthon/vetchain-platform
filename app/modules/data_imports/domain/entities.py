@@ -34,6 +34,9 @@ class DataImport:
     decided_at: datetime | None = None
     errors: tuple[RowError, ...] = ()
     id: int | None = None
+    file_name: str = ""
+    rows_loaded: int | None = None  # filas escritas al confirmar (actualizadas o insertadas)
+    created_by: int | None = None
 
     def __post_init__(self) -> None:
         if self.origin not in IMPORT_ORIGINS:
@@ -45,11 +48,11 @@ class DataImport:
     def valid_rows(self) -> int:
         return self.rows_read - self.rows_with_error
 
-    def confirm(self, now: datetime) -> "DataImport":
+    def confirm(self, now: datetime, rows_loaded: int | None = None) -> "DataImport":
         ImportStateMachine.ensure(self.status, ImportStatus.CONFIRMED)
         if self.valid_rows == 0:
             raise BusinessRuleError("No hay filas válidas para cargar.", "no_valid_rows")
-        return replace(self, status=ImportStatus.CONFIRMED, decided_at=now)
+        return replace(self, status=ImportStatus.CONFIRMED, decided_at=now, rows_loaded=rows_loaded)
 
     def cancel(self, now: datetime) -> "DataImport":
         ImportStateMachine.ensure(self.status, ImportStatus.CANCELLED)

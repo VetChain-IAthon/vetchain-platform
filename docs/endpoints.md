@@ -134,11 +134,11 @@ y `customer-levels` devuelve `missing_levels`. No hay valores por defecto invent
 ## Carga de datos — `data_imports`
 | Método | Ruta | Para qué | Roles | Estado |
 |---|---|---|---|---|
-| GET | /data-sources | Los 7 archivos: contenido, registros, período y estado | M | ⏳ |
-| POST | /data-imports | Subir un CSV (multipart, campo `source`); se valida, no se aplica | M | ⏳ |
-| GET | /data-imports | Cargas anteriores | M | ⏳ |
-| GET | /data-imports/{import_id} | Revisión: filas leídas y errores por línea | M | ⏳ |
-| PATCH | /data-imports/{import_id} | Confirmar (actualiza e inserta, nunca borra) o cancelar | M | ⏳ |
+| GET | /data-sources | Los 7 archivos: encabezados esperados, filas en la base, período y última carga confirmada | M | ✅ |
+| POST | /data-imports | Subir un CSV con encabezados (multipart: `source`, `file`, `origin`); se valida, no se aplica | M | ✅ |
+| GET | /data-imports | Cargas anteriores | M | ✅ |
+| GET | /data-imports/{import_id} | Revisión: filas leídas y errores por línea | M | ✅ |
+| PATCH | /data-imports/{import_id} | Confirmar (actualiza e inserta, nunca borra) o cancelar. Body: `{"action": "confirm" \| "cancel"}` | M | ✅ |
 
 ## General
 | Método | Ruta | Para qué | Roles | Estado |

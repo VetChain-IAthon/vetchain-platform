@@ -1,4 +1,7 @@
-"""Las 7 fuentes de Defontana y su mapa CSV → columna (sin encabezados; `index` es la posición desde 0).
+"""Las 7 fuentes de Defontana y su mapa CSV → columna (`index` es la posición desde 0).
+
+Los archivos originales de Defontana no traen encabezado; los que se suben desde Ajustes sí, con los nombres de
+`HEADERS` (en ese orden). Así se detecta un archivo equivocado antes de leer sus filas.
 
 Debe coincidir con app/infrastructure/loaders/defontana_csv.py (lo verifica tests/test_module_repositories.py).
 Las columnas que no aparecen no se guardan: están vacías, son constantes o repiten datos de otra tabla.
@@ -8,6 +11,7 @@ from datetime import date
 from enum import StrEnum
 from typing import Any
 
+from app.core.domain import BusinessRuleError
 from app.core.domain.numbers import to_decimal
 
 
@@ -72,6 +76,22 @@ class DataSource:
     description: str
     schema: CsvSchema
 
+    @property
+    def headers(self) -> tuple[str, ...]:
+        return HEADERS[self.name]
+
+    @property
+    def file_name(self) -> str:
+        return f"mederi-{self.number}-{FILE_SLUGS[self.name]}.csv"
+
+    def check_headers(self, header_row: list[str]) -> None:
+        """La primera fila del CSV debe traer los encabezados esperados, en el mismo orden (sin importar mayúsculas)."""
+        found = tuple(value.strip().lower() for value in header_row)
+        if found != self.headers:
+            raise BusinessRuleError(
+                f"Los encabezados no corresponden a {self.description.lower()}. Se esperaban {len(self.headers)} columnas: "
+                f"{', '.join(self.headers)}.", "invalid_headers")
+
 
 _T, _I, _D, _F, _B = ColumnType.TEXT, ColumnType.INTEGER, ColumnType.DECIMAL, ColumnType.DATE, ColumnType.BOOLEAN
 
@@ -111,6 +131,34 @@ SOURCES: dict[SourceName, DataSource] = {
                 Column(9, "reference_no", required=False), Column(10, "amount", _D), Column(11, "applied_date", _F)),
     )
 }
+
+FILE_SLUGS = {
+    SourceName.CUSTOMERS: "clientes", SourceName.ORDERS: "pedidos", SourceName.ORDER_LINES: "pedidos-detalles",
+    SourceName.PRODUCTS: "productos", SourceName.STOCK_BALANCES: "kardex", SourceName.RECEIPTS: "cobros",
+    SourceName.SALESPEOPLE: "vendedores",
+}
+
+# Encabezados de los CSV que se suben desde Ajustes. «cN» = columna de Defontana que no se usa (se acepta y se ignora).
+HEADERS: dict[SourceName, tuple[str, ...]] = {
+    SourceName.SALESPEOPLE: ("codigo", "nombre", "ubicacion", "c3", "activo"),
+    SourceName.CUSTOMERS: ("ruc", "nombre", "direccion", "telefono", "correo", "codigo_vendedor", "nombre_vendedor",
+                           "codigo_departamento", "departamento", "codigo_segmento", "c10", "codigo_condicion", "c12", "c13",
+                           "activo", "c15"),
+    SourceName.PRODUCTS: ("codigo", "nombre", "alias", "codigo_categoria", "c4", "codigo_unidad", "c6", "c7", "c8", "c9",
+                          "activo", "c11", "c12", "c13"),
+    SourceName.ORDERS: ("numero_pedido", "fecha", "ruc", "nombre_cliente", "codigo_vendedor", "nombre_vendedor",
+                        "codigo_canal", "subtotal", "descuento", "igv", "total", "estado"),
+    SourceName.ORDER_LINES: ("numero_pedido", "fecha", "ruc", "codigo_vendedor", "linea", "codigo_producto",
+                             "nombre_producto", "codigo_unidad", "cantidad", "cantidad_despachada", "c10",
+                             "precio_unitario", "descuento_pct", "total_linea"),
+    SourceName.STOCK_BALANCES: ("codigo_almacen", "anio", "mes", "codigo_producto", "nombre_producto", "saldo"),
+    SourceName.RECEIPTS: ("numero_cobro", "fecha", "ruc", "nombre_cliente", "tipo_documento", "numero_documento", "c6",
+                          "medio_pago", "c8", "referencia", "monto", "fecha_aplicacion"),
+}
+
+# Orden de carga: primero las tablas de las que dependen las demás (vendedores → clientes → pedidos → detalle…).
+LOAD_ORDER = (SourceName.SALESPEOPLE, SourceName.CUSTOMERS, SourceName.PRODUCTS, SourceName.ORDERS,
+              SourceName.ORDER_LINES, SourceName.STOCK_BALANCES, SourceName.RECEIPTS)
 
 # Fila validada: nombre de columna → valor convertido.
 Record = dict[str, Any]
