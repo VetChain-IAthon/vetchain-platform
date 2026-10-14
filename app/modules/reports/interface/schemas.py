@@ -153,6 +153,11 @@ class StockItemOut(BaseModel):
     product_name: str | None
     balance: JsonNumber
     last_period_end: date
+    units_12m: JsonNumber = Field(description="Unidades pedidas en los 12 meses hasta la fecha del stock, sin bonificadas")
+    last_sale_date: date | None
+    coverage_days: JsonNumber | None = Field(description="Días que alcanza el stock al ritmo de 12 meses (estimado)")
+    status: Literal["out_with_demand", "slow", "overstock", "normal", "out"] = Field(
+        description="Provisional: sobrestock > 120 días de cobertura; lento = sin pedidos en 90 días")
     data_origin: Literal["real"] = "real"
     warning: Literal["stock_balance_unconfirmed"] = "stock_balance_unconfirmed"
 
@@ -167,8 +172,10 @@ class StockReportOut(BaseModel):
     @classmethod
     def from_domain(cls, result: uc.StockReport):
         return cls(period=PeriodOut.from_domain(result.period), stock_as_of=result.stock_as_of,
-                   items=[StockItemOut(product_code=x.product_code, product_name=x.product_name,
-                                       balance=x.balance, last_period_end=x.last_period_end) for x in result.items],
+                   items=[StockItemOut(product_code=x.level.product_code, product_name=x.level.product_name,
+                                       balance=x.level.balance, last_period_end=x.level.last_period_end,
+                                       units_12m=x.units_12m, last_sale_date=x.last_sale_date,
+                                       coverage_days=x.coverage_days, status=x.status) for x in result.items],
                    warnings=result.warnings)
 
 

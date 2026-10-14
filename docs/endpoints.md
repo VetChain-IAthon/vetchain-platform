@@ -93,8 +93,8 @@ La emisión recalcula la vista previa, no confía en importes enviados por la we
 | GET | /reports/kpis | Valores disponibles sin metas ni estados inventados | M | ✅ parcial |
 | GET | /reports/sales | Pedidos por mes, producto y categoría; precio pagado frente a la referencia (5 principales) y descuento en factura; filtro salesperson_code; margen sin datos de costos | M | ✅ |
 | GET | /reports/customers | Concentración, maestro de clientes y top; riesgo y dormancia pendientes de reglas | M | ✅ parcial |
-| GET | /reports/stock | Saldo por producto al último cierre, con aviso de campo sin confirmar y sin lotes | M | ✅ parcial |
-| GET | /reports/receivables | Aviso: cobros y pedidos no se pueden enlazar | M | ✅ aviso |
+| GET | /reports/stock | Saldo por producto al último cierre, con aviso de campo sin confirmar y sin lotes; demanda de 12 meses, cobertura en días y estado por producto (umbrales provisionales) | M | ✅ parcial |
+| GET | /reports/receivables | Cobrado en el período por mes y los 10 clientes que más pagaron (real); deuda pendiente y vencida en null con aviso `receipts_not_linked` | M | ✅ aviso |
 | GET | /reports/salespeople | Monto, pedidos y clientes de 12 meses por vendedor; alertas pendientes | M | ✅ parcial |
 | GET | /reports/funnel | Estructura sin cifras hasta definir alertas y conversión | M | ✅ aviso |
 

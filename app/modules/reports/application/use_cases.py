@@ -206,7 +206,7 @@ class GetCustomersReport:
 class StockReport:
     period: Period
     stock_as_of: date | None
-    items: list[StockLevel]
+    items: list[StockPosition]
     warnings: list[str]
 
 
@@ -222,8 +222,10 @@ class GetStockReport:
                 return StockReport(period, None, [], ["no_stock_data", "stock_balance_unconfirmed", "no_lot_data"])
             end = query.to_date or stock_as_of
             cutoff = min(end, stock_as_of)
-            items = self.stock.levels_at(cutoff.year, cutoff.month)
-            return StockReport(period, cutoff, items, ["stock_balance_unconfirmed", "no_lot_data"])
+            levels = self.stock.levels_at(cutoff.year, cutoff.month)
+            demand = self.sales.units_by_product(DateRange(ReportCalculator.twelve_month_start(cutoff), cutoff), SalesDefinition())
+            items = [StockPosition(level, *demand.get(level.product_code, (Decimal(0), None)), cutoff) for level in levels]
+            return StockReport(period, cutoff, items, ["stock_balance_unconfirmed", "no_lot_data", "no_cost_data"])
 
 
 @dataclass(frozen=True)

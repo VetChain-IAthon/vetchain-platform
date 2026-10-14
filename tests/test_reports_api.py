@@ -47,6 +47,10 @@ def test_customer_stock_salesperson_and_unavailable_reports(client, manager):
     assert stock["stock_as_of"] == "2025-03-31"
     assert "stock_balance_unconfirmed" in stock["warnings"]
     assert next(x for x in stock["items"] if x["product_code"] == "MED0000001")["balance"] == 12
+    med1 = next(x for x in stock["items"] if x["product_code"] == "MED0000001")
+    # 3 unidades pedidas en 12 meses (sin la bonificada ni el pedido cancelado): 12 alcanzan para 1 460 días
+    assert med1["units_12m"] == 3 and med1["last_sale_date"] == "2025-02-15"
+    assert med1["coverage_days"] == 1460 and med1["status"] == "overstock"
     assert all(x["product_code"].startswith("MED") for x in stock["items"])
 
     sellers = client.get("/api/v1/reports/salespeople", headers=manager).json()
