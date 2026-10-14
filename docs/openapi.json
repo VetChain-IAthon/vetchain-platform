@@ -2578,14 +2578,17 @@
         "tags": [
           "planificación de importación"
         ],
-        "summary": "Pedido sugerido por producto (pendiente)",
-        "operationId": "pending_get_import_suggestions_api_v1_import_suggestions_get",
+        "summary": "List Import Suggestions",
+        "description": "Escenario persistido de cuatro laboratorios. Todas las cifras son de ejemplo.",
+        "operationId": "list_import_suggestions_api_v1_import_suggestions_get",
         "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
+          "200": {
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ImportPlanOut"
+                }
               }
             }
           }
@@ -2602,23 +2605,57 @@
         "tags": [
           "planificación de importación"
         ],
-        "summary": "Decisión: aprobar, rechazar o volver a pendiente (pendiente)",
-        "operationId": "pending_patch_import_suggestions_suggestion_id_api_v1_import_suggestions__suggestion_id__patch",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Decide Import Suggestion",
+        "description": "Guarda una revisión de la simulación; no crea ni autoriza compras.",
+        "operationId": "decide_import_suggestion_api_v1_import_suggestions__suggestion_id__patch",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "suggestion_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Suggestion Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/data-sources": {
@@ -4996,6 +5033,24 @@
         ],
         "title": "DataSourcesOut"
       },
+      "DecisionIn": {
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "title": "Decision"
+          }
+        },
+        "type": "object",
+        "required": [
+          "decision"
+        ],
+        "title": "DecisionIn"
+      },
       "DormantCustomerOut": {
         "properties": {
           "ruc": {
@@ -5450,6 +5505,33 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "ImportPlanOut": {
+        "properties": {
+          "data_origin": {
+            "type": "string",
+            "const": "simulated",
+            "title": "Data Origin",
+            "default": "simulated"
+          },
+          "warning": {
+            "type": "string",
+            "title": "Warning",
+            "default": "Escenario de ejemplo. Los laboratorios, productos, stock, demanda, precios, costos y fechas son simulados. No genera pedidos reales."
+          },
+          "laboratories": {
+            "items": {
+              "$ref": "#/components/schemas/LaboratoryOut"
+            },
+            "type": "array",
+            "title": "Laboratories"
+          }
+        },
+        "type": "object",
+        "required": [
+          "laboratories"
+        ],
+        "title": "ImportPlanOut"
+      },
       "ImportPreviewOut": {
         "properties": {
           "columns": {
@@ -5581,6 +5663,64 @@
           "warnings"
         ],
         "title": "KpiReportOut"
+      },
+      "LaboratoryOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "country": {
+            "type": "string",
+            "title": "Country"
+          },
+          "lead_days": {
+            "type": "integer",
+            "title": "Lead Days"
+          },
+          "merchandise_cost_usd": {
+            "type": "string",
+            "title": "Merchandise Cost Usd"
+          },
+          "import_cost_usd": {
+            "type": "integer",
+            "title": "Import Cost Usd"
+          },
+          "estimated_arrival": {
+            "type": "string",
+            "format": "date",
+            "title": "Estimated Arrival"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "simulated",
+            "title": "Data Origin",
+            "default": "simulated"
+          },
+          "suggestions": {
+            "items": {
+              "$ref": "#/components/schemas/SuggestionOut"
+            },
+            "type": "array",
+            "title": "Suggestions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "country",
+          "lead_days",
+          "merchandise_cost_usd",
+          "import_cost_usd",
+          "estimated_arrival",
+          "suggestions"
+        ],
+        "title": "LaboratoryOut"
       },
       "LastImportOut": {
         "properties": {
@@ -7484,6 +7624,76 @@
           "warnings"
         ],
         "title": "StockReportOut"
+      },
+      "SuggestionOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "stock_units": {
+            "type": "integer",
+            "title": "Stock Units"
+          },
+          "coverage_days": {
+            "type": "integer",
+            "title": "Coverage Days"
+          },
+          "demand_90_days": {
+            "type": "integer",
+            "title": "Demand 90 Days"
+          },
+          "suggested_units": {
+            "type": "integer",
+            "title": "Suggested Units"
+          },
+          "shelf_life_months": {
+            "type": "integer",
+            "title": "Shelf Life Months"
+          },
+          "order_before": {
+            "type": "string",
+            "format": "date",
+            "title": "Order Before"
+          },
+          "unit_price_usd": {
+            "type": "string",
+            "title": "Unit Price Usd"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "title": "Decision"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "simulated",
+            "title": "Data Origin",
+            "default": "simulated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "product_name",
+          "stock_units",
+          "coverage_days",
+          "demand_90_days",
+          "suggested_units",
+          "shelf_life_months",
+          "order_before",
+          "unit_price_usd",
+          "decision"
+        ],
+        "title": "SuggestionOut"
       },
       "UserCreateIn": {
         "properties": {

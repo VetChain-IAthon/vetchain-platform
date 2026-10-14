@@ -6,3 +6,4 @@ from app.modules.settings.infrastructure import orm as _settings  # noqa: F401
 from app.modules.quotations.infrastructure import orm as _quotations  # noqa: F401
 from app.modules.data_imports.infrastructure import orm as _data_imports  # noqa: F401
 from app.modules.messaging.infrastructure import orm as _messaging  # noqa: F401
+from app.modules.import_planning.infrastructure import orm as _import_planning  # noqa: F401

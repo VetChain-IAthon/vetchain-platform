@@ -17,7 +17,7 @@ class Decision(StrEnum):
 
 @dataclass(frozen=True)
 class CoveragePolicy:
-    """Reglas fijas que la IA no puede saltarse: meses de cobertura mínima y máxima.
+    """Reglas deterministas de cobertura mínima y máxima para una fase con datos validados.
 
     Si el stock cubre menos que el mínimo, se pide hasta llegar al máximo.
     """
@@ -52,7 +52,7 @@ class CoveragePolicy:
 
 @dataclass(frozen=True)
 class ImportSuggestion:
-    """Solo la demanda mensual es real; cantidad y fecha son `simulated` hasta tener stock y costos validados."""
+    """Sugerencia de dominio para una fase con datos validados; la pantalla inicial usa un escenario simulado."""
 
     product_code: str
     suggested_quantity: Decimal
