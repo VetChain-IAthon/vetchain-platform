@@ -4,8 +4,8 @@ from datetime import date
 from decimal import Decimal
 
 from app.core.domain import BusinessRuleError, DateRange, Money, UnitOfWork
-from app.modules.reports.domain.entities import Kpi, MonthlyAmount, SalesDefinition, StockLevel
-from app.modules.reports.domain.ports import CustomersReadRepository, SalesReadRepository, StockReadRepository
+from app.modules.reports.domain.entities import Kpi, MonthlyAmount, SalesDefinition, StockLevel, StockPosition
+from app.modules.reports.domain.ports import CustomersReadRepository, ReceiptsReadRepository, SalesReadRepository, StockReadRepository
 from app.modules.reports.domain.services import ReportCalculator
 from app.core.domain import DataOrigin
 
@@ -265,13 +265,50 @@ class GetSalespeopleReport:
                                      (["no_order_data"] if not rows else []))
 
 
-class GetReceivablesReport:
-    def __init__(self, sales: SalesReadRepository, uow: UnitOfWork) -> None:
-        self.sales, self.uow = sales, uow
+@dataclass(frozen=True)
+class MonthlyReceipts:
+    month: date
+    amount: Money
+    count: int
 
-    def execute(self, query: ReportQuery) -> Period:
+
+@dataclass(frozen=True)
+class Payer:
+    ruc: str
+    name: str
+    amount: Money
+    count: int
+
+
+@dataclass(frozen=True)
+class ReceivablesReport:
+    """Cobros registrados en el período (reales). La deuda pendiente y vencida no se calcula: los cobros no se
+    enlazan con pedidos ni facturas (aviso `receipts_not_linked`)."""
+
+    period: Period
+    collected: Money | None
+    receipt_count: int | None
+    monthly: list[MonthlyReceipts]
+    top_payers: list[Payer]
+    warnings: list[str]
+
+
+TOP_PAYERS = 10
+
+
+class GetReceivablesReport:
+    def __init__(self, sales: SalesReadRepository, uow: UnitOfWork, receipts: ReceiptsReadRepository | None = None) -> None:
+        self.sales, self.uow, self.receipts = sales, uow, receipts
+
+    def execute(self, query: ReportQuery) -> ReceivablesReport:
         with self.uow:
-            return resolve_period(self.sales, query)
+            period = resolve_period(self.sales, query)
+            if period.date_range is None or self.receipts is None:
+                return ReceivablesReport(period, None, None, [], [], ["receipts_not_linked"])
+            monthly = [MonthlyReceipts(*row) for row in self.receipts.monthly_receipts(period.date_range)]
+            payers = [Payer(*row) for row in self.receipts.top_payers(period.date_range, TOP_PAYERS)]
+            return ReceivablesReport(period, Money.total([m.amount for m in monthly]), sum(m.count for m in monthly),
+                                     monthly, payers, ["receipts_not_linked"])
 
 
 @dataclass(frozen=True)
@@ -309,6 +346,7 @@ class GetKpis:
 
     def execute(self, query: ReportQuery) -> KpiReport:
         result = self.summary.execute(query)
+        below = self._below_reference_pct(result.period)
         values = {"ordered_amount": result.amount.amount if result.amount else None,
                   "order_count": Decimal(result.order_count) if result.order_count is not None else None,
                   "average_order": result.average_order.amount if result.average_order else None,
@@ -316,20 +354,11 @@ class GetKpis:
                   "top_ten_share_pct": result.top_ten_share_pct}
         items = [Kpi(code, value, None, None, DataOrigin.REAL,
                      "no_order_data" if value is None else None) for code, value in values.items()]
-        return KpiReport(result.period, items, ["targets_unconfigured", *result.warnings])
-
-
-class GetFunnelReport:
-    def __init__(self, sales: SalesReadRepository, uow: UnitOfWork) -> None:
-        self.sales, self.uow = sales, uow
-
-    def execute(self, query: ReportQuery) -> Period:
-        with self.uow:
-            return resolve_period(self.sales, query)
-        below = self._below_reference_pct(result.period)
         if self.sales is not None:
             items.append(Kpi("below_reference_pct", below, None, None, DataOrigin.ESTIMATED,
                              "no_order_data" if below is None else None))
+        return KpiReport(result.period, items, ["targets_unconfigured", *result.warnings])
+
     def _below_reference_pct(self, period: Period) -> Decimal | None:
         """Cuánto por debajo del último precio pagado (la referencia) se vendieron en promedio los 5 productos de mayor monto,
         ponderado por monto. Estimado: no hay lista de precios oficial."""
@@ -339,3 +368,11 @@ class GetFunnelReport:
             points = [PricePoint(*row) for row in self.sales.product_price_points(period.date_range, SalesDefinition(), PRICE_KPI_TOP_PRODUCTS)]
         return weighted_below_reference(points)
 
+
+class GetFunnelReport:
+    def __init__(self, sales: SalesReadRepository, uow: UnitOfWork) -> None:
+        self.sales, self.uow = sales, uow
+
+    def execute(self, query: ReportQuery) -> Period:
+        with self.uow:
+            return resolve_period(self.sales, query)

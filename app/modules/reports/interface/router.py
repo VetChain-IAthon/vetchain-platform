@@ -79,7 +79,7 @@ def get_receivables_report(
     date_from: date | None = Query(None, alias="from"), date_to: date | None = Query(None, alias="to"),
     use_case: uc.GetReceivablesReport = Depends(deps.get_receivables_report),
 ):
-    return ReceivablesReportOut(period=PeriodOut.from_domain(use_case.execute(_query(date_from, date_to))))
+    return ReceivablesReportOut.from_domain(use_case.execute(_query(date_from, date_to)))
 
 
 @router.get("/reports/salespeople", response_model=SalespeopleReportOut)

@@ -53,6 +53,18 @@ class ReceivablesReadRepository(Protocol):
     def outstanding(self, as_of: date) -> list[Receivable]: ...
 
 
+class ReceiptsReadRepository(Protocol):
+    """Cobros registrados en Defontana. No se enlazan con pedidos: sirven para ver cuánto se cobró, no cuánto se debe."""
+
+    def monthly_receipts(self, date_range: DateRange) -> list[tuple[date, Money, int]]:
+        """(primer día del mes, monto cobrado, cantidad de cobros) por mes con cobros."""
+        ...
+
+    def top_payers(self, date_range: DateRange, limit: int) -> list[tuple[str, str, Money, int]]:
+        """(RUC, nombre, monto cobrado, cantidad de cobros) de los clientes que más pagaron."""
+        ...
+
+
 class FunnelReadRepository(Protocol):
     def funnel(self, date_range: DateRange) -> Funnel: ...
 

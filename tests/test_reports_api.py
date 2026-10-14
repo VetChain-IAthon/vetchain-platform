@@ -59,8 +59,15 @@ def test_customer_stock_salesperson_and_unavailable_reports(client, manager):
 
     receivables = client.get("/api/v1/reports/receivables", headers=manager).json()
     assert receivables["outstanding_amount"] is None and receivables["warnings"] == ["receipts_not_linked"]
+    # R1 (118) y R2 (59) de VET UNO caen en los 12 meses hasta el 2025-03-01
+    assert receivables["collected_amount"] == 177 and receivables["receipt_count"] == 2
+    assert receivables["top_payers"] == [{"ruc": "20111111111", "name": "VET UNO S.A.C.", "amount": 177, "count": 2}]
+    assert [m["month"] for m in receivables["monthly_collected"]] == ["2025-01-01", "2025-02-01"]
     kpis = client.get("/api/v1/reports/kpis", headers=manager).json()
     assert all(x["target"] is None and x["status"] is None for x in kpis["items"])
+    below = next(x for x in kpis["items"] if x["code"] == "below_reference_pct")
+    # MED1 pagado a 41,67 frente a 45 (referencia P2); MED2 a 15 frente a 10 (P4): promedio ponderado por monto
+    assert below["value"] == -3.7 and below["data_origin"] == "estimated"
     funnel = client.get("/api/v1/reports/funnel", headers=manager).json()
     assert funnel["alerts"] is None and funnel["recovered_amount"] is None
     catalog = client.get("/api/v1/reports", headers=manager).json()
@@ -69,9 +76,6 @@ def test_customer_stock_salesperson_and_unavailable_reports(client, manager):
 
 def test_all_reports_forbid_salesperson_and_reject_bad_period(client, manager, login):
     seller = login("salesperson")
-    below = next(x for x in kpis["items"] if x["code"] == "below_reference_pct")
-    # MED1 pagado a 41,67 frente a 45 (referencia P2); MED2 a 15 frente a 10 (P4): promedio ponderado por monto
-    assert below["value"] == -3.7 and below["data_origin"] == "estimated"
     for path in ("/dashboard/summary", "/reports", "/reports/kpis", "/reports/sales", "/reports/customers",
                  "/reports/stock", "/reports/receivables", "/reports/salespeople", "/reports/funnel"):
         assert client.get("/api/v1" + path, headers=seller).status_code == 403, path

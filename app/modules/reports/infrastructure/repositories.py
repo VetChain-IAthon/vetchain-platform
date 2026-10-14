@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.domain import DateRange, Money
 from app.infrastructure.db.repositories import queries
-from app.infrastructure.db.source_models import Customer, Order, OrderLine, Product, Salesperson, StockBalance
+from app.infrastructure.db.source_models import Customer, Order, OrderLine, Product, Receipt, Salesperson, StockBalance
 from app.modules.reports.domain.entities import MonthlyAmount, SalesDefinition, StockLevel
 
 
@@ -165,3 +165,28 @@ class SqlStockReadRepository:
             for row in queries.stock_at(self._session, year, month)
             if row["product_code"] in core_codes
         ]
+
+
+class SqlReceiptsReadRepository:
+    """Implementa ReceiptsReadRepository sobre `receipts` (montos tal como vienen del CSV de cobros)."""
+
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def monthly_receipts(self, date_range: DateRange) -> list[tuple[date, Money, int]]:
+        month = queries._month(self._session, Receipt.receipt_date).label("month")
+        rows = self._session.execute(
+            select(month, func.sum(Receipt.amount).label("amount"), func.count().label("count"))
+            .where(Receipt.receipt_date >= date_range.from_date, Receipt.receipt_date <= date_range.to_date)
+            .group_by(month).order_by(month)
+        )
+        return [(date.fromisoformat(row.month + "-01"), Money(row.amount), row.count) for row in rows]
+
+    def top_payers(self, date_range: DateRange, limit: int) -> list[tuple[str, str, Money, int]]:
+        rows = self._session.execute(
+            select(Receipt.ruc, Customer.name, func.sum(Receipt.amount).label("amount"), func.count().label("count"))
+            .join(Customer, Customer.ruc == Receipt.ruc)
+            .where(Receipt.receipt_date >= date_range.from_date, Receipt.receipt_date <= date_range.to_date)
+            .group_by(Receipt.ruc, Customer.name).order_by(func.sum(Receipt.amount).desc(), Receipt.ruc).limit(limit)
+        )
+        return [(row.ruc, row.name, Money(row.amount), row.count) for row in rows]

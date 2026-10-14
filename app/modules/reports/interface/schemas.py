@@ -204,11 +204,37 @@ class SalespeopleReportOut(BaseModel):
                                                share_pct=x.share_pct) for x in result.items], warnings=result.warnings)
 
 
+class ReceiptMonthOut(BaseModel):
+    month: date
+    amount: JsonNumber
+    count: int
+
+
+class PayerOut(BaseModel):
+    ruc: str
+    name: str
+    amount: JsonNumber
+    count: int
+
+
 class ReceivablesReportOut(BaseModel):
     period: PeriodOut
-    outstanding_amount: JsonNumber | None = None
-    overdue_amount: JsonNumber | None = None
+    outstanding_amount: JsonNumber | None = Field(None, description="Siempre null: los cobros no se enlazan con pedidos")
+    overdue_amount: JsonNumber | None = Field(None, description="Siempre null: falta el vencimiento de cada factura")
+    collected_amount: JsonNumber | None = Field(None, description="Cobrado en el período, tal como viene en cobros (real)")
+    receipt_count: int | None = None
+    monthly_collected: list[ReceiptMonthOut] = Field(default_factory=list)
+    top_payers: list[PayerOut] = Field(default_factory=list, description="Los 10 clientes que más pagaron en el período")
     warnings: list[str] = ["receipts_not_linked"]
+    data_origin: Literal["real"] = "real"
+
+    @classmethod
+    def from_domain(cls, result: uc.ReceivablesReport):
+        return cls(period=PeriodOut.from_domain(result.period),
+                   collected_amount=result.collected.amount if result.collected else None, receipt_count=result.receipt_count,
+                   monthly_collected=[ReceiptMonthOut(month=m.month, amount=m.amount.amount, count=m.count) for m in result.monthly],
+                   top_payers=[PayerOut(ruc=p.ruc, name=p.name, amount=p.amount.amount, count=p.count) for p in result.top_payers],
+                   warnings=result.warnings)
 
 
 class ReportEntryOut(BaseModel):
