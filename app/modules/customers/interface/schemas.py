@@ -41,6 +41,125 @@ class CustomerPageOut(BaseModel):
     data_origin: DataOriginReal = "real"
 
 
+class AtRiskCustomerOut(BaseModel):
+    ruc: str
+    name: str
+    last_order_date: date
+    days_since_last_order: int = Field(description="Días entre el último pedido y la fecha de corte de los datos")
+    purchase_rhythm_days: JsonNumber | None = Field(description="Días promedio entre pedidos en 12 meses; null con menos de dos")
+    money_at_stake: JsonNumber = Field(description="Pedido promedio de 12 meses, sin IGV")
+
+    @classmethod
+    def from_result(cls, item: uc.AtRiskCustomer) -> "AtRiskCustomerOut":
+        return cls(
+            ruc=item.customer.ruc.value, name=item.customer.name, last_order_date=item.last_order_date,
+            days_since_last_order=item.days_since_last_order,
+            purchase_rhythm_days=item.rhythm.average_days if item.rhythm else None,
+            money_at_stake=item.money_at_stake.amount,
+        )
+
+
+class AtRiskCustomerPageOut(BaseModel):
+    items: list[AtRiskCustomerOut]
+    total: int
+    page: int
+    per_page: int
+    data_as_of: date | None
+    at_risk_factor: JsonNumber = Field(description="Veces el ritmo de compra a partir de las cuales el cliente está en riesgo")
+    default_rhythm_days: JsonNumber = Field(description="Ritmo usado cuando el cliente tiene menos de dos pedidos")
+    warning: Literal["risk_factors_provisional"] = "risk_factors_provisional"
+    data_origin: Literal["estimated"] = "estimated"
+
+    @classmethod
+    def from_result(cls, result: uc.AtRiskCustomerList) -> "AtRiskCustomerPageOut":
+        return cls(
+            items=[AtRiskCustomerOut.from_result(item) for item in result.page.items],
+            total=result.page.total, page=result.page.page, per_page=result.page.per_page,
+            data_as_of=result.data_as_of, at_risk_factor=result.at_risk_factor, default_rhythm_days=result.default_rhythm_days,
+        )
+
+
+class FollowUpBucketOut(BaseModel):
+    outcome: str | None = Field(description="Resultado del último contacto; null = sin contactar")
+    customer_count: int
+    money_at_stake: JsonNumber = Field(description="Suma del pedido promedio de cada cliente, sin IGV")
+
+
+class SalespersonFollowUpOut(BaseModel):
+    salesperson_code: str
+    salesperson_name: str
+    customer_count: int
+    money_at_stake: JsonNumber
+    buckets: list[FollowUpBucketOut]
+
+
+class AtRiskFollowUpOut(BaseModel):
+    items: list[SalespersonFollowUpOut]
+    warning: Literal["portfolio_provisional"] = "portfolio_provisional"
+    data_origin: Literal["estimated"] = "estimated"
+
+    @classmethod
+    def from_result(cls, result: "list[uc.SalespersonFollowUp]") -> "AtRiskFollowUpOut":
+        return cls(items=[
+            SalespersonFollowUpOut(
+                salesperson_code=f.salesperson_code, salesperson_name=f.salesperson_name, customer_count=f.customer_count,
+                money_at_stake=f.money_at_stake.amount,
+                buckets=[FollowUpBucketOut(outcome=b.outcome, customer_count=b.customer_count, money_at_stake=b.money_at_stake.amount)
+                         for b in f.buckets],
+            )
+            for f in result
+        ])
+
+
+class DormantCustomerOut(BaseModel):
+    ruc: str
+    name: str
+    customer_type: str | None = Field(description="company | person | other")
+    region: str | None
+    order_count: int = Field(description="Pedidos en todo el historial")
+    lifetime_amount: JsonNumber = Field(description="Monto histórico de pedidos, sin IGV, solo veterinarios")
+    last_order_date: date | None = Field(description="null si no tiene pedidos en los archivos")
+
+    @classmethod
+    def from_result(cls, item: uc.DormantCustomer) -> "DormantCustomerOut":
+        customer, act = item.customer, item.lifetime
+        return cls(
+            ruc=customer.ruc.value, name=customer.name, customer_type=customer.customer_type, region=customer.region,
+            order_count=act.order_count, lifetime_amount=act.amount.amount, last_order_date=act.last_order_date,
+        )
+
+
+class DormantTypeCountsOut(BaseModel):
+    all: int
+    company: int
+    person: int
+
+
+class DormantCustomerPageOut(BaseModel):
+    items: list[DormantCustomerOut]
+    total: int
+    page: int
+    per_page: int
+    customer_count: int = Field(description="Clientes de la cartera visible")
+    dormant_count: int = Field(description="Sin pedidos en los 12 meses, antes de buscar o filtrar")
+    ordered_before_count: int = Field(description="Dormidos que sí tuvieron pedidos antes")
+    type_counts: DormantTypeCountsOut = Field(description="Dormidos que coinciden con la búsqueda, por tipo")
+    data_as_of: date | None = Field(description="Fecha del último pedido cargado: la ventana de 12 meses termina aquí")
+    data_origin: DataOriginReal = "real"
+
+    @classmethod
+    def from_result(cls, result: uc.DormantCustomerList) -> "DormantCustomerPageOut":
+        counts = result.type_counts
+        return cls(
+            items=[DormantCustomerOut.from_result(item) for item in result.page.items],
+            total=result.page.total, page=result.page.page, per_page=result.page.per_page,
+            customer_count=result.customer_count, dormant_count=result.dormant_count,
+            ordered_before_count=result.ordered_before_count,
+            type_counts=DormantTypeCountsOut(all=counts.get("all", 0), company=counts.get("company", 0), person=counts.get("person", 0)),
+            data_as_of=result.data_as_of,
+        )
+
+
 class CustomerDetailOut(CustomerSummaryOut):
     phone: str | None
     email: str | None

@@ -93,8 +93,8 @@ def test_monthly_amounts_follow_sales_definition(session):
 def test_amounts_by_category_and_customer(session):
     assert SqlSalesReadRepository(session).amounts_by_category(YEAR_2025, SalesDefinition()) == [("001", Money("155.00"))]
     assert SqlCustomersReadRepository(session).amounts_by_customer(YEAR_2025, SalesDefinition()) == [
-        ("20111111111", Money("145.00")),
-        ("10222222222", Money("10.00")),
+        ("20111111111", Money("145.00"), 2),
+        ("10222222222", Money("10.00"), 1),
     ]
 
 
