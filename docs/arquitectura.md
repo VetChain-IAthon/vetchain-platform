@@ -6,19 +6,39 @@ Navegador ──► Web (Vercel) ──► API (Render) ──► Base de datos 
                                   └──► Gemini API (solo cifras agregadas)
 ```
 
-La API es un monolito modular: un solo servicio con módulos separados por carpeta.
+La API es un **monolito modular**: un solo servicio con módulos separados por carpeta.
+Cada módulo se organiza en cuatro capas (domain, application, infrastructure, interface).
+Las reglas completas están en [`capas.md`](capas.md).
 
-| Módulo | Ruta | Qué hace | Usa a |
+## Módulos
+
+| Módulo | Qué hace | Recursos que expone (`/api/v1`) | Llama a (por `public.py`) |
 |---|---|---|---|
-| auth | `/api/auth` | Usuarios, login y roles | — |
-| customers | `/api/customers` | Alertas de clientes dormidos y registro de contactos | prediction, explanations |
-| explanations | `/api/explanations` | Texto breve que explica por qué se alerta un cliente | — (llama a Gemini) |
-| pricing | `/api/pricing` | Niveles de cliente y reglas de descuento | — |
-| quotes | `/api/quotes` | Cotizaciones con reglas de descuento | pricing |
-| prediction | `/api/prediction` | Probabilidad de recompra con el modelo XGBoost | — |
-| reports | `/api/reports` | KPIs y reportes (ventas, clientes, stock, cobranza, vendedores) | — |
-| planning | `/api/planning` | Planificación de importación | prediction |
-| data_import | `/api/data-import` | Importar los CSV de Mederi | — |
+| auth | Usuarios, sesión y roles | `/sessions`, `/me`, `/users` | — |
+| customers | Clientes, alertas diarias de clientes dormidos y contactos | `/customers`, `/alerts` | prediction, explanations, settings |
+| explanations | Texto con Gemini que explica una alerta; preguntas a los datos | `/insights/questions` | reports |
+| settings | IGV, vigencia, margen mínimo, niveles A/B/C y umbrales | `/settings/*` | — |
+| quotations | Productos, vista previa y emisión de cotizaciones | `/products`, `/quotation-previews`, `/quotations` | settings, customers |
+| prediction | Probabilidad de recompra (XGBoost) y pronóstico de demanda | `/prediction/model` | — |
+| reports | Panel gerencial, KPIs y reportes | `/dashboard/*`, `/reports/*` | settings, data_imports |
+| import_planning | Sugerencias de importación por producto | `/import-suggestions` | prediction |
+| data_imports | Carga de los 7 CSV de Mederi (validar, revisar, confirmar) | `/data-sources`, `/data-imports` | quotations |
 
-Flujo de una alerta: customers pide la probabilidad a prediction, luego pide el texto a explanations
-(enviando solo cifras agregadas) y devuelve la alerta completa.
+`/health` queda fuera de los módulos.
+
+## Flujos principales
+
+- **Alerta diaria.** La tarea `GenerateDailyAlerts` de customers pide probabilidades a prediction y guarda una alerta
+  por cliente y día. Cuando alguien abre la explicación, customers arma `AggregatedFigures` (sin nombre ni RUC) y
+  se las pasa a explanations, que llama a Gemini o devuelve un texto de reserva.
+- **Cotización.** quotations pide a customers las condiciones comerciales del cliente y a settings el IGV, la
+  vigencia y el margen mínimo. Calcula los totales y decide si hace falta aprobación.
+- **Carga de datos.** data_imports valida el CSV y lo deja en espera (`staged`). Al confirmarlo hace un upsert,
+  sin borrar nada. Si la carga es de pedidos, avisa a quotations para marcar las cotizaciones convertidas o vencidas.
+- **Pregunta a los datos.** explanations convierte la pregunta en una consulta permitida (`InsightQuery`), reports
+  la ejecuta y la respuesta sale de la base, no de Gemini.
+
+## Estado actual
+
+El código todavía está en estructura plana (`router.py`, `service.py`, `schemas.py`, `models.py`) y con nombres
+anteriores. Cada módulo se pasa a capas cuando se construye. Ver la sección 8 de [`capas.md`](capas.md).
