@@ -1,4 +1,7 @@
-"""Crea todas las tablas en la base de datos configurada en DATABASE_URL."""
+"""Crea todas las tablas con create_all. SOLO para pruebas y prototipos en SQLite.
+
+En PostgreSQL (local, Neon) se usan las migraciones: `alembic upgrade head`.
+"""
 from app.core.database import Base, engine
 import app.db_models  # noqa: F401  (registra todas las tablas)
 

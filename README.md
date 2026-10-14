@@ -13,7 +13,8 @@ python -m venv .venv
 source .venv/bin/activate        # En Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env              # y completa los valores
-python -m scripts.create_tables   # crea las tablas en la base
+alembic upgrade head              # crea o actualiza las tablas (migraciones)
+python -m scripts.load_csv         # carga los 7 CSV de data/ (no se suben al repo)
 uvicorn app.main:app --reload
 ```
 
@@ -31,6 +32,7 @@ pytest
 
 ```
 app/
+  infrastructure/    base de datos compartida: ORM de Defontana, unidad de trabajo, consultas, cargador CSV
   main.py            punto de entrada: registra los módulos
   core/              núcleo compartido: configuración, base de datos, seguridad
   modules/           un módulo por carpeta, en capas: domain, application, infrastructure, interface

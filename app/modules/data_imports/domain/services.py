@@ -13,11 +13,11 @@ class CsvRowValidator:
             return None, RowError(line, f"Se esperaban {self._schema.width} columnas y llegaron {len(values)}.")
         record: Record = {}
         problems = []
-        for column, raw in zip(self._schema.columns, values):
+        for column in self._schema.columns:
             try:
-                record[column.name] = column.parse(raw)
+                record[column.name] = column.parse(values[column.index])
             except ValueError as error:
                 problems.append(str(error))
         if problems:
-            return None, RowError(line, " ".join(problems))
+            return None, RowError(line, "; ".join(problems) + ".")
         return record, None

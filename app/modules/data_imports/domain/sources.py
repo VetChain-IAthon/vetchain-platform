@@ -1,6 +1,10 @@
-"""Fuentes de datos y columnas propuestas de cada CSV (sin encabezados). Pendiente confirmar con Mederi."""
+"""Las 7 fuentes de Defontana y su mapa CSV → columna (sin encabezados; `index` es la posición desde 0).
+
+Debe coincidir con app/infrastructure/loaders/defontana_csv.py (lo verifica tests/test_module_repositories.py).
+Las columnas que no aparecen no se guardan: están vacías, son constantes o repiten datos de otra tabla.
+"""
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date
 from enum import StrEnum
 from typing import Any
 
@@ -14,7 +18,7 @@ class SourceName(StrEnum):
     ORDERS = "orders"
     ORDER_LINES = "order_lines"
     STOCK_BALANCES = "stock_balances"
-    PAYMENTS = "payments"
+    RECEIPTS = "receipts"
 
 
 class ColumnType(StrEnum):
@@ -22,99 +26,89 @@ class ColumnType(StrEnum):
     INTEGER = "integer"
     DECIMAL = "decimal"
     DATE = "date"
-
-
-_DATE_FORMATS = ("%Y-%m-%d", "%d/%m/%Y")
+    BOOLEAN = "boolean"
 
 
 @dataclass(frozen=True)
 class Column:
+    index: int
     name: str
     type: ColumnType = ColumnType.TEXT
     required: bool = True
-    max_length: int | None = None
 
     def parse(self, raw: str) -> Any:
-        """Devuelve el valor convertido o lanza ValueError con un mensaje en español."""
+        """Devuelve el valor convertido (None si es opcional y está vacío) o lanza ValueError en español."""
         value = raw.strip()
         if not value:
             if self.required:
-                raise ValueError(f"'{self.name}' es obligatorio.")
+                raise ValueError(f"falta {self.name}")
             return None
-        if self.type is ColumnType.TEXT:
-            if self.max_length is not None and len(value) > self.max_length:
-                raise ValueError(f"'{self.name}' supera {self.max_length} caracteres.")
-            return value
-        if self.type is ColumnType.INTEGER:
-            if not value.lstrip("-").isdigit():
-                raise ValueError(f"'{self.name}' debe ser un número entero.")
-            return int(value)
-        if self.type is ColumnType.DECIMAL:
-            try:
+        try:
+            if self.type is ColumnType.INTEGER:
+                return int(value)
+            if self.type is ColumnType.DECIMAL:
                 return to_decimal(value)
-            except ValueError:
-                raise ValueError(f"'{self.name}' debe ser un número (use punto decimal).") from None
-        for fmt in _DATE_FORMATS:
-            try:
-                return datetime.strptime(value, fmt).date()
-            except ValueError:
-                continue
-        raise ValueError(f"'{self.name}' debe ser una fecha AAAA-MM-DD o DD/MM/AAAA.")
+            if self.type is ColumnType.DATE:
+                return date.fromisoformat(value)
+            if self.type is ColumnType.BOOLEAN:
+                if value not in ("0", "1"):
+                    raise ValueError(value)
+                return value == "1"
+        except ValueError:
+            raise ValueError(f"{self.name} inválido") from None
+        return value
 
 
 @dataclass(frozen=True)
 class CsvSchema:
-    columns: tuple[Column, ...]
-
-    @property
-    def width(self) -> int:
-        return len(self.columns)
+    width: int  # columnas que trae el CSV
+    columns: tuple[Column, ...]  # columnas que se guardan
 
 
 @dataclass(frozen=True)
 class DataSource:
     name: SourceName
+    number: int  # mederi-1-ventas.csv … mederi-7-vendedores.csv
     description: str
     schema: CsvSchema
 
 
-def _schema(*columns: Column) -> CsvSchema:
-    return CsvSchema(columns)
+_T, _I, _D, _F, _B = ColumnType.TEXT, ColumnType.INTEGER, ColumnType.DECIMAL, ColumnType.DATE, ColumnType.BOOLEAN
 
 
-_T, _I, _D, _F = ColumnType.TEXT, ColumnType.INTEGER, ColumnType.DECIMAL, ColumnType.DATE
+def _source(name, number, description, width, *columns) -> DataSource:
+    return DataSource(name, number, description, CsvSchema(width, tuple(columns)))
+
 
 SOURCES: dict[SourceName, DataSource] = {
     source.name: source
     for source in (
-        DataSource(SourceName.CUSTOMERS, "Clientes", _schema(
-            Column("ruc", _T, max_length=11), Column("name", _T, max_length=200),
-            Column("address", _T, False, 300), Column("phone", _T, False, 40), Column("email", _T, False, 200),
-            Column("region", _T, False, 80), Column("customer_type", _T, False, 20),
-        )),
-        DataSource(SourceName.SALESPEOPLE, "Vendedores", _schema(
-            Column("code", _T, max_length=20), Column("name", _T, max_length=120),
-        )),
-        DataSource(SourceName.PRODUCTS, "Productos", _schema(
-            Column("code", _T, max_length=30), Column("name", _T, max_length=250), Column("family", _T, False, 80),
-        )),
-        DataSource(SourceName.ORDERS, "Pedidos (no son ventas facturadas)", _schema(
-            Column("id", _T, max_length=30), Column("order_date", _F), Column("ruc", _T, max_length=11),
-            Column("salesperson_code", _T, False, 20), Column("subtotal", _D), Column("discount", _D, False),
-            Column("igv", _D, False), Column("total", _D), Column("status", _T, False, 30),
-        )),
-        DataSource(SourceName.ORDER_LINES, "Detalle de pedidos", _schema(
-            Column("order_id", _T, max_length=30), Column("line", _I), Column("product_code", _T, max_length=30),
-            Column("quantity", _D), Column("unit_price", _D), Column("discount", _D, False), Column("total", _D),
-        )),
-        DataSource(SourceName.STOCK_BALANCES, "Kardex (saldo mensual por almacén)", _schema(
-            Column("warehouse", _T, max_length=10), Column("year", _I), Column("month", _I),
-            Column("product_code", _T, max_length=30), Column("balance", _D),
-        )),
-        DataSource(SourceName.PAYMENTS, "Cobros", _schema(
-            Column("payment_number", _T, max_length=30), Column("order_id", _T, False, 30),
-            Column("ruc", _T, max_length=11), Column("amount", _D), Column("payment_date", _F),
-        )),
+        _source(SourceName.SALESPEOPLE, 7, "Vendedores", 5,
+                Column(0, "code"), Column(1, "name"), Column(2, "location", required=False), Column(4, "is_active", _B)),
+        _source(SourceName.CUSTOMERS, 1, "Clientes", 16,
+                Column(0, "ruc"), Column(1, "name"), Column(2, "address", required=False),
+                Column(3, "phone", required=False), Column(4, "email", required=False), Column(5, "salesperson_code"),
+                Column(7, "department_code", required=False), Column(8, "department", required=False),
+                Column(9, "segment_code", required=False), Column(11, "condition_code", required=False),
+                Column(14, "is_active", _B)),
+        _source(SourceName.PRODUCTS, 4, "Productos", 14,
+                Column(0, "code"), Column(1, "name"), Column(2, "alias", required=False), Column(3, "category_code"),
+                Column(5, "unit_code"), Column(10, "is_active", _B)),
+        _source(SourceName.ORDERS, 2, "Pedidos (no son ventas facturadas)", 12,
+                Column(0, "order_no"), Column(1, "order_date", _F), Column(2, "ruc"), Column(4, "salesperson_code"),
+                Column(6, "channel_code"), Column(7, "subtotal", _D), Column(8, "discount", _D), Column(9, "tax", _D),
+                Column(10, "total", _D), Column(11, "status_code", required=False)),
+        _source(SourceName.ORDER_LINES, 3, "Detalle de pedidos", 14,
+                Column(0, "order_no"), Column(4, "line_no", _I), Column(5, "product_code"), Column(7, "unit_code"),
+                Column(8, "quantity", _D), Column(9, "quantity_dispatched", _D), Column(11, "unit_price", _D),
+                Column(12, "discount_pct", _D), Column(13, "line_total", _D)),
+        _source(SourceName.STOCK_BALANCES, 5, "Kardex (saldo mensual por almacén)", 6,
+                Column(0, "warehouse_code"), Column(1, "year", _I), Column(2, "month", _I), Column(3, "product_code"),
+                Column(4, "product_name", required=False), Column(5, "balance", _D)),
+        _source(SourceName.RECEIPTS, 6, "Cobros (sin enlace a pedidos)", 12,
+                Column(0, "receipt_no"), Column(1, "receipt_date", _F), Column(2, "ruc"), Column(4, "type_code"),
+                Column(5, "document_no"), Column(6, "code_c6"), Column(7, "payment_method_code"), Column(8, "code_c8"),
+                Column(9, "reference_no", required=False), Column(10, "amount", _D), Column(11, "applied_date", _F)),
     )
 }
 

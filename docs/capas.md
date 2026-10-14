@@ -74,7 +74,7 @@ Vive en `app/core/`. Solo tipos pequeños y estables, sin lógica de ningún mó
 | `UnitOfWork` | puerto | `commit()`, `rollback()`; una sesión por caso de uso |
 | `BusinessRuleError`, `NotFoundError`, `ForbiddenError`, `ConflictError` | dominio | Errores base |
 | `Page[T]`, `Paging` | aplicación/interfaz | Forma de las listas (`items`, `total`, `page`, `per_page`) |
-| Motor y sesión de BD, `SqlAlchemyUnitOfWork`, `SystemClock` | infraestructura | Compartidos por todos los módulos |
+| Motor y sesión de BD (`app/core/database.py`), `SqlAlchemyUnitOfWork` y ORM de Defontana (`app/infrastructure/db/`), `SystemClock` | infraestructura | Compartidos por todos los módulos. Ver [`infraestructura.md`](infraestructura.md) |
 
 ## 4. Mapa por módulo
 
@@ -206,7 +206,7 @@ Formato: **Dominio** (entidades, objetos de valor, reglas, servicios) · **Puert
   Al confirmar una carga de `orders`, `ConfirmImport` llama a `ConversionNotifier`.
 - **Infraestructura:** `StdlibCsvReader` (módulo csv) · `SqlAlchemyDataImportRepository` (tabla `data_imports`) ·
   `SqlStagingStore` (decidir: tabla de paso o archivo en `data/staging/`) · `SqlSourceDataWriter` (upsert en
-  `customers`, `salespeople`, `products`, `orders`, `order_lines`, `stock_balances`, `payments`) ·
+  `customers`, `salespeople`, `products`, `orders`, `order_lines`, `stock_balances`, `receipts`; hoy lo hace `app/infrastructure/loaders/defontana_csv.py`) ·
   `QuotationsConversionNotifier` (llama a `quotations.public`).
 - **Fachada pública:** `get_data_origin(source) -> DataOrigin`, `list_last_confirmed() -> list[SourceStatus]`.
 
@@ -253,7 +253,7 @@ El esqueleto está en estructura plana. Al construir cada módulo se mueve así:
 | `router.py`, `schemas.py` | `interface/router.py`, `interface/schemas.py` |
 | `service.py` | `application/use_cases.py` (y las reglas puras a `domain/services.py`) |
 | `models.py` (tablas SQLAlchemy) | `infrastructure/orm.py` (las entidades van aparte en `domain/entities.py`) |
-| `app/core/mederi_tables.py` | `app/core/source_tables.py`: infraestructura compartida de solo lectura (la escribe data_imports) |
+| ~~`app/core/mederi_tables.py`~~ | Hecho: ORM en `app/infrastructure/db/source_models.py`; `app/core/source_tables.py` queda como re-export |
 | `app/core/deps.py` | `auth/interface/dependencies.py` (`current_user`, `require_role`) |
 | `app/core/security.py` | `auth/infrastructure/` (`Pbkdf2PasswordHasher`, `JwtTokenService`) |
 | `app/core/errors.py` (nuevo) | Se queda en core: la interfaz traduce los errores del dominio |
@@ -265,7 +265,7 @@ Renombres pendientes en el código para alinearlo con este contrato:
 | Módulos `pricing`, `quotes`, `planning`, `data_import` | `settings`, `quotations`, `import_planning`, `data_imports` |
 | Roles `management`, `sales_rep` | `manager`, `salesperson` |
 | `sales_rep_code` | `salesperson_code` |
-| Tablas `sales_reps`, `order_items`, `kardex` | `salespeople`, `order_lines`, `stock_balances` |
+| ~~Tablas `sales_reps`, `order_items`, `kardex`, `payments`~~ | Hecho: `salespeople`, `order_lines`, `stock_balances`, `receipts` (ver `base-de-datos.md`) |
 | Tablas `customer_tiers`, `customer_rebates` | `customer_levels`, `pricing_settings`, `level_thresholds` (las rebajas por cliente no aparecen) |
 | Tablas `quotes`, `quote_lines` | `quotations`, `quotation_lines` |
 | Rutas `/api/<module>/...` y `GET /status` por módulo | `/api/v1/<recurso>` según `endpoints.md`; solo `/health` |
@@ -284,7 +284,7 @@ Renombres pendientes en el código para alinearlo con este contrato:
    esos tipos al shared_kernel.
 3. ~~El shared_kernel mezcla dominio e infraestructura en `app/core/`.~~ **Resuelto:** la parte pura vive en
    `app/core/domain/` (tipos, errores, `Clock`, `UnitOfWork`) y `app/core/application/` (`Page`, `Paging`).
-   La infraestructura compartida (motor, `SqlAlchemyUnitOfWork`, `SystemClock`) irá en `app/core/infrastructure/`.
+   La infraestructura compartida (`SqlAlchemyUnitOfWork`, ORM de Defontana, cargador) vive en `app/infrastructure/`.
 4. **`endpoints.md` todavía no está en el repositorio** y la versión revisada choca con este contrato:
    - Tiene endpoints `/pdf`, pero este contrato dice "sin PDF en el backend".
    - Los estados de cotización allí son `sent`/`accepted`/`lost`, con `PUT`/`PATCH` para editar. Aquí son
@@ -308,3 +308,13 @@ Renombres pendientes en el código para alinearlo con este contrato:
    - `CoveragePolicy`: si el stock cubre menos que el mínimo, se pide hasta el máximo; un mes cuenta como 30 días.
    - Un usuario no puede desactivarse a sí mismo, y un producto no se repite dentro de una cotización.
    - Los CSV aceptan fechas `AAAA-MM-DD` o `DD/MM/AAAA` y decimales con punto. Hay que confirmarlo con los archivos reales.
+10. **Diferencias entre el dominio y los datos reales (aparecieron al construir la infraestructura):**
+    - ~~`Ruc` exige 11 dígitos~~ **Resuelto:** acepta de 8 a 15 dígitos y expone `kind` (company, person, other),
+      porque 12 clientes activos tienen DNI (ver `dudas-mederi.md`).
+    - ~~`data_imports/domain/sources.py` con columnas anteriores~~ **Resuelto:** usa el mapa real por posición, y
+      `tests/test_module_repositories.py` verifica que coincida con el cargador.
+    - La regla de venta (`SalesDefinition`) excluye por defecto los pedidos cancelados (C), igual que las consultas.
+      Es provisional hasta que Mederi confirme los estados T y D.
+    - Los cobros (`receipts`) no se enlazan con pedidos: `Receivable` y `AgingCalculator` de reports no tienen datos
+      reales hasta que llegue el CSV de comprobantes.
+    - `order_id` pasó a `order_no` en quotations, customers y reports.

@@ -1,0 +1,43 @@
+Carga de los CSV de Defontana en PostgreSQL 18.4 local (base VetChainDb, migración e811b35b030d)
+Fecha: 2026-10-13. Comando: python -m scripts.load_csv
+
+== Primera carga
+Tabla           Archivo                           Leídas  Cargadas  Rechazadas
+salespeople     mederi-7-vendedores.csv                6         6           0
+customers       mederi-1-ventas.csv                 1330      1330           0
+products        mederi-4-productos.csv               115       115           0
+orders          mederi-2-pedidos.csv               14945     14945           0
+order_lines     mederi-3-pedidos-detalles.csv      67403     67403           0
+stock_balances  mederi-5-kardex.csv                 9970      9970           0
+receipts        mederi-6-cobros.csv                14082     14082           0
+  Aviso    salespeople: location vacío (5)
+  Aviso    customers: phone vacío (135)
+  Aviso    customers: email vacío (112)
+  Aviso    customers: condition_code vacío (5)
+  Aviso    customers: department vacío (1)
+  Aviso    products: alias vacío (95)
+  Aviso    orders: status_code vacío (14)
+  Aviso    order_lines: línea repetida (pedido, línea) (18)
+  Aviso    stock_balances: saldo negativo (22)
+  Aviso    stock_balances: product_name vacío (6)
+  Aviso    receipts: reference_no vacío (14025)
+código de salida: 0
+
+== Segunda carga (upsert, no debe duplicar)
+Tabla           Archivo                           Leídas  Cargadas  Rechazadas
+salespeople     mederi-7-vendedores.csv                6         6           0
+customers       mederi-1-ventas.csv                 1330      1330           0
+products        mederi-4-productos.csv               115       115           0
+orders          mederi-2-pedidos.csv               14945     14945           0
+order_lines     mederi-3-pedidos-detalles.csv      67403     67403           0
+stock_balances  mederi-5-kardex.csv                 9970      9970           0
+receipts        mederi-6-cobros.csv                14082     14082           0
+
+== Conteos en la base después de las dos cargas
+products 115
+salespeople 6
+customers 1330
+stock_balances 9970
+receipts 14082
+orders 14945
+order_lines 67403

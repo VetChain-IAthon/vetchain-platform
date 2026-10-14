@@ -28,9 +28,13 @@ def test_percentage_out_of_range(value):
         Percentage(value)
 
 
-def test_ruc_needs_11_digits():
+def test_ruc_accepts_8_to_15_digits_and_reports_kind():
     assert Ruc(" 20123456789 ").value == "20123456789"
-    for bad in ("2012345678", "2012345678A"):
+    assert [Ruc(v).kind for v in ("20123456789", "10123456789", "17123456789", "12345678")] == [
+        "company", "person", "person", "other",
+    ]
+    assert not Ruc("12345678").is_standard_ruc
+    for bad in ("1234567", "1234567890123456", "2012345678A"):
         with pytest.raises(BusinessRuleError):
             Ruc(bad)
 

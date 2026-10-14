@@ -62,7 +62,11 @@ def test_recovered_amount():
     assert calculator.recovered(contacts, orders) == Money("300")
 
 
-def test_sales_definition_is_provisional_until_confirmed():
-    assert SalesDefinition().counts("X") and SalesDefinition().is_provisional
-    confirmed = SalesDefinition(frozenset({"A", "C", "D"}))
-    assert confirmed.counts("C") and not confirmed.counts("B")
+def test_sales_definition_excludes_cancelled_by_default():
+    definition = SalesDefinition()
+    assert definition.provisional
+    assert [definition.counts(status) for status in ("T", "A", "C", "D", None)] == [True, True, False, True, True]
+    strict = SalesDefinition(frozenset({"C", "D"}), provisional=False)
+    assert not strict.counts("D")
+    with pytest.raises(BusinessRuleError):
+        SalesDefinition(frozenset({"X"}))

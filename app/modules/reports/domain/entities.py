@@ -97,24 +97,59 @@ class AgingBucket:
 
 @dataclass(frozen=True)
 class Receivable:
-    """Saldo pendiente de un pedido. El vencimiento se estima con los días de crédito del nivel."""
+    """Saldo pendiente de un pedido. El vencimiento se estima con los días de crédito del nivel.
+    Sin datos reales todavía: los cobros no se enlazan con pedidos (falta el CSV de comprobantes)."""
 
-    order_id: str
+    order_no: str
     level: str
     order_date: date
     outstanding: Money
 
 
 @dataclass(frozen=True)
-class SalesDefinition:
-    """Qué pedidos cuentan como "venta". Mientras Mederi no confirme los estados (A, C, D) cuentan todos."""
+class MonthlyAmount:
+    month: date  # primer día del mes
+    order_count: int
+    amount: Money  # sin IGV, solo productos veterinarios
+    dispatched_amount: Money  # pedidos en estado T
 
-    counted_statuses: frozenset[str] | None = None
+
+@dataclass(frozen=True)
+class StockLevel:
+    """Stock de un producto al cierre de un mes, sumando almacenes (último saldo conocido hasta ese mes)."""
+
+    product_code: str
+    product_name: str | None
+    balance: Decimal
+    last_period_end: date
+    data_origin: DataOrigin = DataOrigin.REAL
+
+
+ORDER_STATUSES = {
+    "T": "En tránsito",
+    "A": "Almacén / Aprobado",
+    "C": "Cancelado",
+    "D": "Devuelto / Entregado",
+    None: "Sin dato",
+}
+
+
+@dataclass(frozen=True)
+class SalesDefinition:
+    """Qué pedidos cuentan como "venta" según su estado (orders.status_code).
+
+    Provisional: cuentan todos menos los cancelados (C). Falta que Mederi confirme si T (92 % de los pedidos)
+    incluye entregados y si D es devuelto o entregado.
+    """
+
+    excluded_statuses: frozenset[str] = frozenset({"C"})
+    provisional: bool = True
+
+    def __post_init__(self) -> None:
+        unknown = set(self.excluded_statuses) - {code for code in ORDER_STATUSES if code}
+        if unknown:
+            raise BusinessRuleError(f"Estado de pedido desconocido: {', '.join(sorted(unknown))}.", "unknown_status")
 
     def counts(self, order_status: str | None) -> bool:
-        return self.counted_statuses is None or order_status in self.counted_statuses
-
-    @property
-    def is_provisional(self) -> bool:
-        return self.counted_statuses is None
+        return order_status not in self.excluded_statuses
 
