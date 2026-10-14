@@ -75,6 +75,7 @@ class SourceReport:
     rejected: Counter = field(default_factory=Counter)
     rejected_samples: list[tuple[int, str]] = field(default_factory=list)
     warnings: Counter = field(default_factory=Counter)
+    rejected_lines: list[tuple[int, str]] = field(default_factory=list)  # todas, para revisar una carga desde Ajustes
 
     @property
     def rows_rejected(self) -> int:
@@ -82,6 +83,7 @@ class SourceReport:
 
     def reject(self, line: int, reason: str) -> None:
         self.rejected[reason] += 1
+        self.rejected_lines.append((line, reason))
         if len(self.rejected_samples) < MAX_SAMPLES:
             self.rejected_samples.append((line, reason))
 
@@ -290,6 +292,15 @@ def _parent_keys(session: Session, spec: SourceSpec) -> dict[str, set[str]]:
         (pk,) = parent.__table__.primary_key.columns
         keys[parent.__tablename__] = set(session.scalars(select(pk)))
     return keys
+
+
+def validate_source(session: Session, spec: SourceSpec, rows: Iterable[list[str]]) -> SourceReport:
+    """Valida las filas contra la base actual (claves foráneas incluidas) sin escribir nada."""
+    return parse_rows(spec, rows, _parent_keys(session, spec))[1]
+
+
+def spec_for(table: str) -> SourceSpec:
+    return next(spec for spec in SPECS if spec.table == table)
 
 
 def load_source(session: Session, spec: SourceSpec, rows: Iterable[list[str]]) -> SourceReport:

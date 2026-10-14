@@ -125,6 +125,40 @@ class StockLevel:
     data_origin: DataOrigin = DataOrigin.REAL
 
 
+# Umbrales provisionales para clasificar el stock (propuesta; gerencia aún no los definió).
+OVERSTOCK_COVERAGE_DAYS = 120
+SLOW_MOVING_DAYS = 90
+
+
+@dataclass(frozen=True)
+class StockPosition:
+    """Stock de un producto frente a su demanda de 12 meses hasta la fecha del stock. Estimado: el saldo del kardex
+    está POR CONFIRMAR y no hay lotes, así que no se calculan vencimientos ni merma."""
+
+    level: StockLevel
+    units_12m: Decimal  # unidades pedidas (sin bonificadas) en los 12 meses que terminan en `as_of`
+    last_sale_date: date | None
+    as_of: date
+
+    @property
+    def coverage_days(self) -> Decimal | None:
+        """Días que alcanza el stock al ritmo de los últimos 12 meses; None sin demanda o sin stock."""
+        if self.units_12m <= 0 or self.level.balance <= 0:
+            return None
+        return (self.level.balance / (self.units_12m / 365)).quantize(Decimal("1"))
+
+    @property
+    def status(self) -> str:
+        """out_with_demand · slow · overstock · normal · out (sin stock ni demanda)."""
+        recent = self.last_sale_date is not None and (self.as_of - self.last_sale_date).days <= SLOW_MOVING_DAYS
+        if self.level.balance <= 0:
+            return "out_with_demand" if recent else "out"
+        if not recent:
+            return "slow"
+        coverage = self.coverage_days
+        return "overstock" if coverage is not None and coverage > OVERSTOCK_COVERAGE_DAYS else "normal"
+
+
 ORDER_STATUSES = {
     "T": "En tránsito",
     "A": "Almacén / Aprobado",
@@ -144,6 +178,7 @@ class SalesDefinition:
 
     excluded_statuses: frozenset[str] = frozenset({"C"})
     provisional: bool = True
+    salesperson_code: str | None = None  # solo los pedidos que tomó ese vendedor; None = todos
 
     def __post_init__(self) -> None:
         unknown = set(self.excluded_statuses) - {code for code in ORDER_STATUSES if code}

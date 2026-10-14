@@ -41,6 +41,10 @@ def get_get_customer(db: Session = Depends(get_db)) -> uc.GetCustomer:
     return uc.GetCustomer(_customers(db), SettingsPublicGateway(), _uow(db))
 
 
+def get_get_customer_brief(db: Session = Depends(get_db)) -> uc.GetCustomerBrief:
+    return uc.GetCustomerBrief(_customers(db), SettingsPublicGateway(), _uow(db))
+
+
 def get_list_customer_orders(db: Session = Depends(get_db)) -> uc.ListCustomerOrders:
     return uc.ListCustomerOrders(_customers(db), _uow(db))
 

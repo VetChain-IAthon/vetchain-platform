@@ -26,6 +26,11 @@ def test_dashboard_and_sales_use_core_non_bonus_non_cancelled_orders(client, man
     assert sales["products"][0]["amount"] == 125
     assert sales["categories"] == [{"code": "001", "amount": 155, "data_origin": "real"}]
     assert "no_cost_data" in sales["warnings"]
+    assert sales["invoice_discount"] == 5 and sales["list_amount"] == 160  # P2: 10 % de descuento en la línea de 50
+    assert [(p["code"], p["below_reference_pct"]) for p in sales["price_points"]] == [("MED0000001", 7.4), ("MED0000002", -50.0)]
+    assert sales["below_reference_pct"] == -3.7
+    seller = client.get("/api/v1/reports/sales?salesperson_code=002", headers=manager).json()
+    assert seller["amount"] == 55 and seller["order_count"] == 2  # P2 y P4, que tomó el vendedor 002
 
     january = client.get("/api/v1/dashboard/summary?from=2025-01-01&to=2025-01-31", headers=manager).json()
     assert january["amount"] == 100 and january["order_count"] == 1
@@ -42,6 +47,10 @@ def test_customer_stock_salesperson_and_unavailable_reports(client, manager):
     assert stock["stock_as_of"] == "2025-03-31"
     assert "stock_balance_unconfirmed" in stock["warnings"]
     assert next(x for x in stock["items"] if x["product_code"] == "MED0000001")["balance"] == 12
+    med1 = next(x for x in stock["items"] if x["product_code"] == "MED0000001")
+    # 3 unidades pedidas en 12 meses (sin la bonificada ni el pedido cancelado): 12 alcanzan para 1 460 días
+    assert med1["units_12m"] == 3 and med1["last_sale_date"] == "2025-02-15"
+    assert med1["coverage_days"] == 1460 and med1["status"] == "overstock"
     assert all(x["product_code"].startswith("MED") for x in stock["items"])
 
     sellers = client.get("/api/v1/reports/salespeople", headers=manager).json()
@@ -50,8 +59,15 @@ def test_customer_stock_salesperson_and_unavailable_reports(client, manager):
 
     receivables = client.get("/api/v1/reports/receivables", headers=manager).json()
     assert receivables["outstanding_amount"] is None and receivables["warnings"] == ["receipts_not_linked"]
+    # R1 (118) y R2 (59) de VET UNO caen en los 12 meses hasta el 2025-03-01
+    assert receivables["collected_amount"] == 177 and receivables["receipt_count"] == 2
+    assert receivables["top_payers"] == [{"ruc": "20111111111", "name": "VET UNO S.A.C.", "amount": 177, "count": 2}]
+    assert [m["month"] for m in receivables["monthly_collected"]] == ["2025-01-01", "2025-02-01"]
     kpis = client.get("/api/v1/reports/kpis", headers=manager).json()
     assert all(x["target"] is None and x["status"] is None for x in kpis["items"])
+    below = next(x for x in kpis["items"] if x["code"] == "below_reference_pct")
+    # MED1 pagado a 41,67 frente a 45 (referencia P2); MED2 a 15 frente a 10 (P4): promedio ponderado por monto
+    assert below["value"] == -3.7 and below["data_origin"] == "estimated"
     funnel = client.get("/api/v1/reports/funnel", headers=manager).json()
     assert funnel["alerts"] is None and funnel["recovered_amount"] is None
     catalog = client.get("/api/v1/reports", headers=manager).json()

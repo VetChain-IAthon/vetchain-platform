@@ -711,6 +711,107 @@
         }
       }
     },
+    "/api/v1/customers/{ruc}/brief": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Get Customer Brief",
+        "description": "Ficha para reunión (versión interna): pedidos, precios, ritmo y vendedor del período.\nProyección, ganancia, ofertas, guion y cobranza llegan como avisos en `warnings` hasta tener modelo, IA y datos.",
+        "operationId": "get_customer_brief_api_v1_customers__ruc__brief_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Por defecto, 12 meses antes de `to`",
+              "title": "From"
+            },
+            "description": "Por defecto, 12 meses antes de `to`"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Por defecto, la fecha de corte de los datos",
+              "title": "To"
+            },
+            "description": "Por defecto, la fecha de corte de los datos"
+          },
+          {
+            "name": "projection",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "month",
+                "semester",
+                "year"
+              ],
+              "type": "string",
+              "default": "month",
+              "title": "Projection"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerBriefOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/customers/{ruc}/orders": {
       "get": {
         "tags": [
@@ -1149,30 +1250,6 @@
         ],
         "summary": "Texto de IA que explica la alerta (solo cifras agregadas) (pendiente)",
         "operationId": "pending_get_alerts_alert_id_explanation_api_v1_alerts__alert_id__explanation_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/customers/{ruc}/brief": {
-      "get": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Ficha del cliente para reunión (from, to, projection) (pendiente)",
-        "operationId": "pending_get_customers_ruc_brief_api_v1_customers__ruc__brief_get",
         "responses": {
           "501": {
             "description": "Endpoint del contrato aún no construido",
@@ -2091,6 +2168,25 @@
               ],
               "title": "To"
             }
+          },
+          {
+            "name": "salesperson_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 3
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Solo los pedidos que tomó ese vendedor",
+              "title": "Salesperson Code"
+            },
+            "description": "Solo los pedidos que tomó ese vendedor"
           }
         ],
         "responses": {
@@ -2530,14 +2626,17 @@
         "tags": [
           "carga de datos"
         ],
-        "summary": "Los 7 archivos: contenido, registros, período y estado (pendiente)",
-        "operationId": "pending_get_data_sources_api_v1_data_sources_get",
+        "summary": "List Data Sources",
+        "description": "Los 7 archivos: encabezados esperados, filas en la base, período y última carga confirmada.",
+        "operationId": "list_data_sources_api_v1_data_sources_get",
         "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
+          "200": {
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataSourcesOut"
+                }
               }
             }
           }
@@ -2550,49 +2649,110 @@
       }
     },
     "/api/v1/data-imports": {
-      "get": {
-        "tags": [
-          "carga de datos"
-        ],
-        "summary": "Cargas anteriores (pendiente)",
-        "operationId": "pending_get_data_imports_api_v1_data_imports_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      },
       "post": {
         "tags": [
           "carga de datos"
         ],
-        "summary": "Subir un CSV (multipart, campo source); se valida pero no se aplica (pendiente)",
-        "operationId": "pending_post_data_imports_api_v1_data_imports_post",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Stage Import",
+        "description": "Sube un CSV: se revisan los encabezados y se valida cada fila. Queda en revisión; no se aplica todavía.",
+        "operationId": "stage_import_api_v1_data_imports_post",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_stage_import_api_v1_data_imports_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataImportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "carga de datos"
+        ],
+        "summary": "List Imports",
+        "description": "Cargas anteriores, de la más reciente a la más antigua.",
+        "operationId": "list_imports_api_v1_data_imports_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataImportPageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/data-imports/{import_id}": {
@@ -2600,45 +2760,103 @@
         "tags": [
           "carga de datos"
         ],
-        "summary": "Revisión: filas leídas y errores por línea (pendiente)",
-        "operationId": "pending_get_data_imports_import_id_api_v1_data_imports__import_id__get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Get Import",
+        "description": "Revisión de una carga: filas leídas, válidas, errores por línea y, en revisión, qué pasará con cada fila.",
+        "operationId": "get_import_api_v1_data_imports__import_id__get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "import_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Import Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataImportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       },
       "patch": {
         "tags": [
           "carga de datos"
         ],
-        "summary": "Confirmar (actualiza e inserta) o cancelar (pendiente)",
-        "operationId": "pending_patch_data_imports_import_id_api_v1_data_imports__import_id__patch",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
+        "summary": "Decide Import",
+        "description": "Confirmar escribe las filas válidas (actualiza e inserta, nunca borra). Cancelar las descarta.",
+        "operationId": "decide_import_api_v1_data_imports__import_id__patch",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "import_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Import Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataImportDecisionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataImportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/health": {
@@ -2704,6 +2922,11 @@
             "type": "number",
             "title": "Money At Stake",
             "description": "Pedido promedio de 12 meses, sin IGV"
+          },
+          "amount_12m": {
+            "type": "number",
+            "title": "Amount 12M",
+            "description": "Pedidos de 12 meses, sin IGV"
           }
         },
         "type": "object",
@@ -2713,7 +2936,8 @@
           "last_order_date",
           "days_since_last_order",
           "purchase_rhythm_days",
-          "money_at_stake"
+          "money_at_stake",
+          "amount_12m"
         ],
         "title": "AtRiskCustomerOut"
       },
@@ -2812,6 +3036,161 @@
           "items"
         ],
         "title": "AtRiskFollowUpOut"
+      },
+      "Body_stage_import_api_v1_data_imports_post": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "customers",
+              "salespeople",
+              "products",
+              "orders",
+              "order_lines",
+              "stock_balances",
+              "receipts"
+            ],
+            "title": "Source"
+          },
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "CSV con encabezados (ver /data-sources)"
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "real",
+              "synthetic",
+              "simulated"
+            ],
+            "title": "Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "file"
+        ],
+        "title": "Body_stage_import_api_v1_data_imports_post"
+      },
+      "BriefMonthOut": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month",
+            "description": "AAAA-MM"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "order_count": {
+            "type": "integer",
+            "title": "Order Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "amount",
+          "order_count"
+        ],
+        "title": "BriefMonthOut"
+      },
+      "BriefProductOut": {
+        "properties": {
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "category_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Code",
+            "description": "Categoría de Defontana (POR CONFIRMAR)"
+          },
+          "order_count": {
+            "type": "integer",
+            "title": "Order Count"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount",
+            "description": "Sin IGV, sin bonificadas"
+          },
+          "average_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Price",
+            "description": "Precio pagado promedio por unidad, sin IGV"
+          },
+          "reference_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Price",
+            "description": "Último precio pagado por cualquier cliente (estimado)"
+          },
+          "below_reference_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Below Reference Pct",
+            "description": "% bajo la referencia; negativo si pagó más"
+          },
+          "last_order_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Last Order Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_code",
+          "product_name",
+          "category_code",
+          "order_count",
+          "quantity",
+          "amount",
+          "average_price",
+          "reference_price",
+          "below_reference_pct",
+          "last_order_date"
+        ],
+        "title": "BriefProductOut"
       },
       "CategoryAmountOut": {
         "properties": {
@@ -3030,6 +3409,315 @@
           "order_count"
         ],
         "title": "CustomerAmountOut"
+      },
+      "CustomerBriefOut": {
+        "properties": {
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level",
+            "description": "Por el monto de 12 meses; null mientras gerencia no defina los umbrales"
+          },
+          "credit_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credit Days"
+          },
+          "salesperson_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salesperson Code"
+          },
+          "salesperson_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salesperson Name"
+          },
+          "salesperson_share_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salesperson Share Pct",
+            "description": "% del monto del período atendido por su vendedor asignado"
+          },
+          "date_from": {
+            "type": "string",
+            "format": "date",
+            "title": "Date From"
+          },
+          "date_to": {
+            "type": "string",
+            "format": "date",
+            "title": "Date To"
+          },
+          "data_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data As Of"
+          },
+          "projection": {
+            "type": "string",
+            "enum": [
+              "month",
+              "semester",
+              "year"
+            ],
+            "title": "Projection"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount",
+            "description": "Pedidos del período, sin IGV, solo veterinarios"
+          },
+          "order_count": {
+            "type": "integer",
+            "title": "Order Count"
+          },
+          "average_order_amount": {
+            "type": "number",
+            "title": "Average Order Amount"
+          },
+          "share_pct": {
+            "type": "number",
+            "title": "Share Pct",
+            "description": "% del monto de todos los clientes en el período"
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank"
+          },
+          "ranked_customers": {
+            "type": "integer",
+            "title": "Ranked Customers",
+            "description": "Clientes con pedidos en el período"
+          },
+          "purchase_rhythm_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Rhythm Days"
+          },
+          "last_order_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Order Date"
+          },
+          "expected_next_order_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Next Order Date"
+          },
+          "days_since_last_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Since Last Order",
+            "description": "Hasta date_to"
+          },
+          "days_late": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Late",
+            "description": "Días por encima de su ritmo de compra; 0 si va al día"
+          },
+          "invoice_discount": {
+            "type": "number",
+            "title": "Invoice Discount",
+            "description": "Descuento de línea en los pedidos del período, sin IGV"
+          },
+          "list_amount": {
+            "type": "number",
+            "title": "List Amount",
+            "description": "Monto antes del descuento de línea"
+          },
+          "monthly": {
+            "items": {
+              "$ref": "#/components/schemas/BriefMonthOut"
+            },
+            "type": "array",
+            "title": "Monthly"
+          },
+          "order_dates": {
+            "items": {
+              "type": "string",
+              "format": "date"
+            },
+            "type": "array",
+            "title": "Order Dates"
+          },
+          "products": {
+            "items": {
+              "$ref": "#/components/schemas/BriefProductOut"
+            },
+            "type": "array",
+            "title": "Products"
+          },
+          "below_reference_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Below Reference Pct",
+            "description": "Promedio ponderado por monto, solo productos con referencia"
+          },
+          "projected_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Projected Amount",
+            "description": "Siempre null hasta que exista el modelo de predicción"
+          },
+          "estimated_profit": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Profit",
+            "description": "Siempre null hasta que haya costos validados"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruc",
+          "name",
+          "level",
+          "credit_days",
+          "salesperson_code",
+          "salesperson_name",
+          "salesperson_share_pct",
+          "date_from",
+          "date_to",
+          "data_as_of",
+          "projection",
+          "amount",
+          "order_count",
+          "average_order_amount",
+          "share_pct",
+          "rank",
+          "ranked_customers",
+          "purchase_rhythm_days",
+          "last_order_date",
+          "expected_next_order_date",
+          "days_since_last_order",
+          "days_late",
+          "invoice_discount",
+          "list_amount",
+          "monthly",
+          "order_dates",
+          "products",
+          "below_reference_pct",
+          "projected_amount",
+          "estimated_profit",
+          "warnings"
+        ],
+        "title": "CustomerBriefOut"
       },
       "CustomerDetailOut": {
         "properties": {
@@ -3680,6 +4368,255 @@
         ],
         "title": "DashboardSummaryOut"
       },
+      "DataImportDecisionIn": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "confirm",
+              "cancel"
+            ],
+            "title": "Action"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "DataImportDecisionIn"
+      },
+      "DataImportOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "origin": {
+            "type": "string",
+            "title": "Origin"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "staged",
+              "confirmed",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "rows_read": {
+            "type": "integer",
+            "title": "Rows Read"
+          },
+          "rows_with_error": {
+            "type": "integer",
+            "title": "Rows With Error"
+          },
+          "valid_rows": {
+            "type": "integer",
+            "title": "Valid Rows"
+          },
+          "rows_loaded": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rows Loaded"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/RowErrorOut"
+            },
+            "type": "array",
+            "title": "Errors",
+            "description": "Hasta 200 errores por línea"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "preview": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImportPreviewOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo mientras la carga está en revisión"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "source",
+          "file_name",
+          "origin",
+          "status",
+          "rows_read",
+          "rows_with_error",
+          "valid_rows",
+          "rows_loaded",
+          "errors",
+          "created_at",
+          "decided_at"
+        ],
+        "title": "DataImportOut"
+      },
+      "DataImportPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DataImportOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "per_page"
+        ],
+        "title": "DataImportPageOut"
+      },
+      "DataSourceOut": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "customers, salespeople, products, orders, order_lines, stock_balances o receipts"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name",
+            "description": "Nombre sugerido del archivo, como los CSV originales"
+          },
+          "headers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Headers",
+            "description": "Encabezados que debe traer la primera fila, en este orden"
+          },
+          "rows_in_db": {
+            "type": "integer",
+            "title": "Rows In Db"
+          },
+          "first_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Date"
+          },
+          "last_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Date"
+          },
+          "last_import": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LastImportOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "number",
+          "description",
+          "file_name",
+          "headers",
+          "rows_in_db",
+          "first_date",
+          "last_date",
+          "last_import"
+        ],
+        "title": "DataSourceOut"
+      },
+      "DataSourcesOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DataSourceOut"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "DataSourcesOut"
+      },
       "DormantCustomerOut": {
         "properties": {
           "ruc": {
@@ -3969,6 +4906,44 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "ImportPreviewOut": {
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Columns",
+            "description": "Encabezados de las columnas que identifican cada fila"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/PreviewRowOut"
+            },
+            "type": "array",
+            "title": "Rows",
+            "description": "Hasta 500 filas, en el orden del archivo"
+          },
+          "new_rows": {
+            "type": "integer",
+            "title": "New Rows",
+            "description": "Filas válidas que se agregarán"
+          },
+          "updated_rows": {
+            "type": "integer",
+            "title": "Updated Rows",
+            "description": "Filas válidas que actualizan un registro existente"
+          }
+        },
+        "type": "object",
+        "required": [
+          "columns",
+          "rows",
+          "new_rows",
+          "updated_rows"
+        ],
+        "title": "ImportPreviewOut"
+      },
       "KpiOut": {
         "properties": {
           "code": {
@@ -4062,6 +5037,49 @@
           "warnings"
         ],
         "title": "KpiReportOut"
+      },
+      "LastImportOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "origin": {
+            "type": "string",
+            "title": "Origin"
+          },
+          "rows_loaded": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rows Loaded"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "decided_at",
+          "origin",
+          "rows_loaded"
+        ],
+        "title": "LastImportOut"
       },
       "LevelThresholdsIn": {
         "properties": {
@@ -4269,6 +5287,34 @@
         ],
         "title": "OrderPageOut"
       },
+      "PayerOut": {
+        "properties": {
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruc",
+          "name",
+          "amount",
+          "count"
+        ],
+        "title": "PayerOut"
+      },
       "PeriodOut": {
         "properties": {
           "from_date": {
@@ -4327,6 +5373,115 @@
           "warning"
         ],
         "title": "PeriodOut"
+      },
+      "PreviewRowOut": {
+        "properties": {
+          "line": {
+            "type": "integer",
+            "title": "Line"
+          },
+          "values": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Values"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "update",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "line",
+          "values",
+          "status",
+          "message"
+        ],
+        "title": "PreviewRowOut"
+      },
+      "PricePointOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount",
+            "description": "Sin IGV, sin bonificadas"
+          },
+          "average_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Price"
+          },
+          "reference_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Price",
+            "description": "Último precio pagado por cualquier cliente hasta el fin del período (estimado)"
+          },
+          "below_reference_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Below Reference Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "quantity",
+          "amount",
+          "average_price",
+          "reference_price",
+          "below_reference_pct"
+        ],
+        "title": "PricePointOut"
       },
       "PricingIn": {
         "properties": {
@@ -5063,6 +6218,30 @@
         ],
         "title": "QuotationPreviewOut"
       },
+      "ReceiptMonthOut": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "format": "date",
+            "title": "Month"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "amount",
+          "count"
+        ],
+        "title": "ReceiptMonthOut"
+      },
       "ReceivablesReportOut": {
         "properties": {
           "period": {
@@ -5077,7 +6256,8 @@
                 "type": "null"
               }
             ],
-            "title": "Outstanding Amount"
+            "title": "Outstanding Amount",
+            "description": "Siempre null: los cobros no se enlazan con pedidos"
           },
           "overdue_amount": {
             "anyOf": [
@@ -5088,7 +6268,46 @@
                 "type": "null"
               }
             ],
-            "title": "Overdue Amount"
+            "title": "Overdue Amount",
+            "description": "Siempre null: falta el vencimiento de cada factura"
+          },
+          "collected_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collected Amount",
+            "description": "Cobrado en el período, tal como viene en cobros (real)"
+          },
+          "receipt_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receipt Count"
+          },
+          "monthly_collected": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptMonthOut"
+            },
+            "type": "array",
+            "title": "Monthly Collected"
+          },
+          "top_payers": {
+            "items": {
+              "$ref": "#/components/schemas/PayerOut"
+            },
+            "type": "array",
+            "title": "Top Payers",
+            "description": "Los 10 clientes que más pagaron en el período"
           },
           "warnings": {
             "items": {
@@ -5099,6 +6318,12 @@
             "default": [
               "receipts_not_linked"
             ]
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
           }
         },
         "type": "object",
@@ -5185,6 +6410,25 @@
         ],
         "title": "ReportEntryOut"
       },
+      "RowErrorOut": {
+        "properties": {
+          "line": {
+            "type": "integer",
+            "title": "Line",
+            "description": "Línea del archivo (la 2 es la primera fila de datos, después de los encabezados)"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "line",
+          "message"
+        ],
+        "title": "RowErrorOut"
+      },
       "SalesReportOut": {
         "properties": {
           "period": {
@@ -5243,6 +6487,50 @@
               }
             ],
             "title": "Margin Pct"
+          },
+          "price_points": {
+            "items": {
+              "$ref": "#/components/schemas/PricePointOut"
+            },
+            "type": "array",
+            "title": "Price Points",
+            "description": "Los 5 productos de mayor monto: precio pagado frente a la referencia"
+          },
+          "below_reference_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Below Reference Pct",
+            "description": "Promedio ponderado por monto de price_points (estimado)"
+          },
+          "invoice_discount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Discount",
+            "description": "Descuento de línea en factura del período, sin IGV"
+          },
+          "list_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "List Amount",
+            "description": "Monto antes del descuento de línea"
           },
           "warnings": {
             "items": {
@@ -5476,6 +6764,47 @@
             "format": "date",
             "title": "Last Period End"
           },
+          "units_12m": {
+            "type": "number",
+            "title": "Units 12M",
+            "description": "Unidades pedidas en los 12 meses hasta la fecha del stock, sin bonificadas"
+          },
+          "last_sale_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sale Date"
+          },
+          "coverage_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Days",
+            "description": "Días que alcanza el stock al ritmo de 12 meses (estimado)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "out_with_demand",
+              "slow",
+              "overstock",
+              "normal",
+              "out"
+            ],
+            "title": "Status",
+            "description": "Provisional: sobrestock > 120 días de cobertura; lento = sin pedidos en 90 días"
+          },
           "data_origin": {
             "type": "string",
             "const": "real",
@@ -5494,7 +6823,11 @@
           "product_code",
           "product_name",
           "balance",
-          "last_period_end"
+          "last_period_end",
+          "units_12m",
+          "last_sale_date",
+          "coverage_days",
+          "status"
         ],
         "title": "StockItemOut"
       },
