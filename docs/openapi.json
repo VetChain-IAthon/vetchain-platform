@@ -283,6 +283,534 @@
         }
       }
     },
+    "/api/v1/customers": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "List Customers",
+        "description": "Cartera ordenada por monto de pedidos de 12 meses, con nivel y participación.",
+        "operationId": "list_customers_api_v1_customers_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Nombre o inicio del RUC",
+              "title": "Search"
+            },
+            "description": "Nombre o inicio del RUC"
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "A",
+                    "B",
+                    "C"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Level"
+            }
+          },
+          {
+            "name": "salesperson_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 3
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Solo gerencia; al vendedor se le fuerza el suyo",
+              "title": "Salesperson Code"
+            },
+            "description": "Solo gerencia; al vendedor se le fuerza el suyo"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerPageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{ruc}": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Get Customer",
+        "description": "Ficha del cliente con nivel, resumen de 12 meses e historial completo.",
+        "operationId": "get_customer_api_v1_customers__ruc__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{ruc}/orders": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "List Customer Orders",
+        "description": "Historial de pedidos (todos los estados), del más reciente al más antiguo.",
+        "operationId": "list_customer_orders_api_v1_customers__ruc__orders_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderPageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{ruc}/products": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "List Customer Products",
+        "description": "Productos veterinarios que compra, de mayor a menor monto.",
+        "operationId": "list_customer_products_api_v1_customers__ruc__products_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductPurchasesOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{ruc}/commercial-terms": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Get Commercial Terms",
+        "description": "Nivel del cliente y sus reglas: margen, descuento máximo y días de crédito.",
+        "operationId": "get_commercial_terms_api_v1_customers__ruc__commercial_terms_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommercialTermsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{ruc}/contacts": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "List Contacts",
+        "operationId": "list_contacts_api_v1_customers__ruc__contacts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactPageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Register Contact",
+        "description": "Registra que contactaste hoy al cliente y qué respondió.",
+        "operationId": "register_contact_api_v1_customers__ruc__contacts_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{ruc}/whatsapp-link": {
+      "get": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Build Whatsapp Link",
+        "operationId": "build_whatsapp_link_api_v1_customers__ruc__whatsapp_link_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          },
+          {
+            "name": "message",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 1000
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Si no llega, se usa el mensaje sugerido",
+              "title": "Message"
+            },
+            "description": "Si no llega, se usa el mensaje sugerido"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsappLinkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/alerts": {
       "get": {
         "tags": [
@@ -362,196 +890,6 @@
         ],
         "summary": "Texto de IA que explica la alerta (solo cifras agregadas) (pendiente)",
         "operationId": "pending_get_alerts_alert_id_explanation_api_v1_alerts__alert_id__explanation_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/customers": {
-      "get": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Lista de clientes con filtros de nivel, estado, búsqueda y vendedor (pendiente)",
-        "operationId": "pending_get_customers_api_v1_customers_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/customers/{ruc}": {
-      "get": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Ficha del cliente con nivel y resumen de 12 meses (pendiente)",
-        "operationId": "pending_get_customers_ruc_api_v1_customers__ruc__get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/customers/{ruc}/orders": {
-      "get": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Historial de pedidos (pendiente)",
-        "operationId": "pending_get_customers_ruc_orders_api_v1_customers__ruc__orders_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/customers/{ruc}/products": {
-      "get": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Qué compra el cliente y con qué frecuencia (pendiente)",
-        "operationId": "pending_get_customers_ruc_products_api_v1_customers__ruc__products_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/customers/{ruc}/commercial-terms": {
-      "get": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Nivel, margen, descuento máximo y días de crédito (pendiente)",
-        "operationId": "pending_get_customers_ruc_commercial_terms_api_v1_customers__ruc__commercial_terms_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/customers/{ruc}/contacts": {
-      "get": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Registro de contactos (pendiente)",
-        "operationId": "pending_get_customers_ruc_contacts_api_v1_customers__ruc__contacts_get",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      },
-      "post": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Registrar un contacto y su resultado (pendiente)",
-        "operationId": "pending_post_customers_ruc_contacts_api_v1_customers__ruc__contacts_post",
-        "responses": {
-          "501": {
-            "description": "Endpoint del contrato aún no construido",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/customers/{ruc}/whatsapp-link": {
-      "get": {
-        "tags": [
-          "clientes y alertas"
-        ],
-        "summary": "Enlace wa.me con el mensaje sugerido (pendiente)",
-        "operationId": "pending_get_customers_ruc_whatsapp_link_api_v1_customers__ruc__whatsapp_link_get",
         "responses": {
           "501": {
             "description": "Endpoint del contrato aún no construido",
@@ -1416,6 +1754,328 @@
   },
   "components": {
     "schemas": {
+      "CommercialTermsOut": {
+        "properties": {
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "margin_pct": {
+            "type": "number",
+            "title": "Margin Pct"
+          },
+          "max_discount_pct": {
+            "type": "number",
+            "title": "Max Discount Pct"
+          },
+          "credit_days": {
+            "type": "integer",
+            "title": "Credit Days"
+          },
+          "amount_12m": {
+            "type": "number",
+            "title": "Amount 12M",
+            "description": "Monto de 12 meses con el que se calculó el nivel"
+          },
+          "data_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data As Of"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level",
+          "margin_pct",
+          "max_discount_pct",
+          "credit_days",
+          "amount_12m",
+          "data_as_of"
+        ],
+        "title": "CommercialTermsOut"
+      },
+      "ContactIn": {
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 1,
+            "title": "Outcome",
+            "description": "Qué respondió el cliente (las opciones se definen con Mederi)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "outcome"
+        ],
+        "title": "ContactIn"
+      },
+      "ContactOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome"
+          },
+          "contact_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Contact Date"
+          },
+          "alert_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ruc",
+          "user_id",
+          "outcome",
+          "contact_date",
+          "alert_id"
+        ],
+        "title": "ContactOut"
+      },
+      "ContactPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ContactOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "per_page"
+        ],
+        "title": "ContactPageOut"
+      },
+      "CustomerDetailOut": {
+        "properties": {
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "customer_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Type",
+            "description": "company | person | other"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
+          },
+          "salesperson_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salesperson Code"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level",
+            "description": "A, B o C; null mientras gerencia no defina los umbrales"
+          },
+          "amount_12m": {
+            "type": "number",
+            "title": "Amount 12M",
+            "description": "Pedidos de 12 meses, sin IGV, solo veterinarios"
+          },
+          "order_count_12m": {
+            "type": "integer",
+            "title": "Order Count 12M"
+          },
+          "last_order_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Order Date",
+            "description": "Último pedido en todo el historial"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "average_order_amount_12m": {
+            "type": "number",
+            "title": "Average Order Amount 12M"
+          },
+          "purchase_rhythm_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Rhythm Days",
+            "description": "Días promedio entre pedidos; null con menos de dos"
+          },
+          "lifetime_amount": {
+            "type": "number",
+            "title": "Lifetime Amount"
+          },
+          "lifetime_order_count": {
+            "type": "integer",
+            "title": "Lifetime Order Count"
+          },
+          "first_order_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Order Date"
+          },
+          "data_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data As Of"
+          },
+          "levels_configured": {
+            "type": "boolean",
+            "title": "Levels Configured"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruc",
+          "name",
+          "customer_type",
+          "region",
+          "salesperson_code",
+          "level",
+          "amount_12m",
+          "order_count_12m",
+          "last_order_date",
+          "phone",
+          "email",
+          "average_order_amount_12m",
+          "purchase_rhythm_days",
+          "lifetime_amount",
+          "lifetime_order_count",
+          "first_order_date",
+          "data_as_of",
+          "levels_configured"
+        ],
+        "title": "CustomerDetailOut"
+      },
       "CustomerLevelIn": {
         "properties": {
           "max_discount_pct": {
@@ -1511,6 +2171,166 @@
           "missing_levels"
         ],
         "title": "CustomerLevelsOut"
+      },
+      "CustomerListItemOut": {
+        "properties": {
+          "ruc": {
+            "type": "string",
+            "title": "Ruc"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "customer_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Type",
+            "description": "company | person | other"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
+          },
+          "salesperson_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salesperson Code"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level",
+            "description": "A, B o C; null mientras gerencia no defina los umbrales"
+          },
+          "amount_12m": {
+            "type": "number",
+            "title": "Amount 12M",
+            "description": "Pedidos de 12 meses, sin IGV, solo veterinarios"
+          },
+          "order_count_12m": {
+            "type": "integer",
+            "title": "Order Count 12M"
+          },
+          "last_order_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Order Date",
+            "description": "Último pedido en todo el historial"
+          },
+          "share_pct": {
+            "type": "number",
+            "title": "Share Pct",
+            "description": "% del monto de 12 meses de la cartera visible"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruc",
+          "name",
+          "customer_type",
+          "region",
+          "salesperson_code",
+          "level",
+          "amount_12m",
+          "order_count_12m",
+          "last_order_date",
+          "share_pct"
+        ],
+        "title": "CustomerListItemOut"
+      },
+      "CustomerPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerListItemOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          },
+          "total_amount_12m": {
+            "type": "number",
+            "title": "Total Amount 12M"
+          },
+          "data_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data As Of",
+            "description": "Fecha del último pedido cargado: la ventana de 12 meses termina aquí"
+          },
+          "levels_configured": {
+            "type": "boolean",
+            "title": "Levels Configured"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "per_page",
+          "total_amount_12m",
+          "data_as_of",
+          "levels_configured"
+        ],
+        "title": "CustomerPageOut"
       },
       "HTTPValidationError": {
         "properties": {
@@ -1611,6 +2431,91 @@
         "type": "object",
         "title": "MeUpdateIn"
       },
+      "OrderOut": {
+        "properties": {
+          "order_no": {
+            "type": "string",
+            "title": "Order No"
+          },
+          "order_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Order Date"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount",
+            "description": "Sin IGV (subtotal − descuento). Un pedido no es una venta facturada"
+          },
+          "total_with_tax": {
+            "type": "number",
+            "title": "Total With Tax"
+          },
+          "status_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Code",
+            "description": "T en tránsito, A almacén, C cancelado, D devuelto/entregado (por confirmar)"
+          },
+          "salesperson_code": {
+            "type": "string",
+            "title": "Salesperson Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "order_no",
+          "order_date",
+          "amount",
+          "total_with_tax",
+          "status_code",
+          "salesperson_code"
+        ],
+        "title": "OrderOut"
+      },
+      "OrderPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrderOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "per_page"
+        ],
+        "title": "OrderPageOut"
+      },
       "PricingIn": {
         "properties": {
           "igv_rate_pct": {
@@ -1709,6 +2614,80 @@
           "promo_margin_cut_pct"
         ],
         "title": "PricingOut"
+      },
+      "ProductPurchaseOut": {
+        "properties": {
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "category_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Code"
+          },
+          "times_ordered": {
+            "type": "integer",
+            "title": "Times Ordered"
+          },
+          "total_quantity": {
+            "type": "number",
+            "title": "Total Quantity"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount",
+            "description": "Sin IGV y sin líneas bonificadas"
+          },
+          "last_order_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Last Order Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_code",
+          "product_name",
+          "category_code",
+          "times_ordered",
+          "total_quantity",
+          "amount",
+          "last_order_date"
+        ],
+        "title": "ProductPurchaseOut"
+      },
+      "ProductPurchasesOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProductPurchaseOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "data_origin": {
+            "type": "string",
+            "const": "real",
+            "title": "Data Origin",
+            "default": "real"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "ProductPurchasesOut"
       },
       "SessionCreateIn": {
         "properties": {
@@ -1983,6 +2962,24 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WhatsappLinkOut": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "message"
+        ],
+        "title": "WhatsappLinkOut"
       }
     },
     "securitySchemes": {

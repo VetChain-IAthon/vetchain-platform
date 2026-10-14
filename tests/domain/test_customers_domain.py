@@ -85,3 +85,19 @@ def test_whatsapp_link():
         WhatsappLinkBuilder.build("01 4445555", "Hola")
     with pytest.raises(BusinessRuleError):
         WhatsappLinkBuilder.build(None, "Hola")
+
+
+def test_twelve_month_window_ends_on_data_cutoff():
+    from app.modules.customers.domain.services import TwelveMonthWindow
+
+    assert TwelveMonthWindow.start(date(2026, 1, 31)) == date(2025, 2, 1)
+    assert TwelveMonthWindow.start(date(2024, 2, 29)) == date(2023, 3, 1)
+
+
+def test_share_and_suggested_message():
+    from app.modules.customers.domain.services import ShareCalculator, SuggestedMessage
+
+    assert ShareCalculator.share_pct(Money(Decimal(25)), Money(Decimal(200))) == Decimal("12.5")
+    assert ShareCalculator.share_pct(Money(Decimal(5)), Money.zero()) == Decimal("0.0")
+    message = SuggestedMessage.for_customer("  VET   UNO  ")
+    assert message.startswith("Hola, VET UNO.") and "S/" not in message

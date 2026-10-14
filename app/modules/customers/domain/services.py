@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from urllib.parse import quote
 
@@ -6,6 +6,31 @@ from app.core.domain import BusinessRuleError, Money
 from app.core.domain.numbers import to_decimal
 from app.modules.customers.domain.entities import Alert, CustomerActivity
 from app.modules.customers.domain.value_objects import CustomerStatus, Level, LevelThresholds, PurchaseRhythm
+
+
+class TwelveMonthWindow:
+    """Ventana de 12 meses que termina en la fecha de corte de los datos (el último pedido cargado).
+
+    Los CSV de Mederi son una foto: medir desde hoy dejaría la ventana casi vacía si la última carga es antigua.
+    """
+
+    @staticmethod
+    def start(as_of: date) -> date:
+        try:
+            year_before = as_of.replace(year=as_of.year - 1)
+        except ValueError:  # 29 de febrero
+            year_before = as_of.replace(year=as_of.year - 1, day=28)
+        return year_before + timedelta(days=1)
+
+
+class ShareCalculator:
+    """Porcentaje que representa una parte del total, con un decimal. Total cero = 0 %."""
+
+    @staticmethod
+    def share_pct(part: Money, total: Money) -> Decimal:
+        if total.amount <= 0:
+            return Decimal("0.0")
+        return (part.amount * 100 / total.amount).quantize(Decimal("0.1"))
 
 
 class LevelClassifier:
@@ -63,6 +88,15 @@ class AlertPrioritizer:
     def prioritize(alerts: "list[Alert]") -> "list[Alert]":
         """Primero más dinero en juego; a igual monto, mayor probabilidad."""
         return sorted(alerts, key=lambda alert: (alert.money_at_stake, alert.probability), reverse=True)
+
+
+class SuggestedMessage:
+    """Mensaje de WhatsApp sugerido. Solo usa el nombre del cliente: nunca montos ni datos internos."""
+
+    @staticmethod
+    def for_customer(customer_name: str) -> str:
+        name = " ".join(customer_name.split()) or "estimado cliente"
+        return f"Hola, {name}. Le saludamos de Mederi Pharma. ¿Podemos ayudarle con su próximo pedido?"
 
 
 class WhatsappLinkBuilder:

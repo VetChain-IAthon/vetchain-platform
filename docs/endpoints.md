@@ -47,15 +47,20 @@ la app coincidan con las tablas de este documento, y `docs/openapi.json` se rege
 ## Clientes — `customers`
 | Método | Ruta | Para qué | Roles | Estado |
 |---|---|---|---|---|
-| GET | /customers | Lista. Filtros: level, status (active, at_risk, dormant), search, salesperson_code | M, S | ⏳ |
-| GET | /customers/{ruc} | Ficha con nivel y resumen de 12 meses | M, S | ⏳ |
-| GET | /customers/{ruc}/orders | Historial de pedidos | M, S | ⏳ |
-| GET | /customers/{ruc}/products | Qué compra y con qué frecuencia | M, S | ⏳ |
-| GET | /customers/{ruc}/commercial-terms | Nivel, margen, descuento máximo y días de crédito | M, S | ⏳ |
-| GET | /customers/{ruc}/contacts | Registro de contactos | M, S | ⏳ |
-| POST | /customers/{ruc}/contacts | Registrar un contacto y su resultado | M, S | ⏳ |
-| GET | /customers/{ruc}/whatsapp-link | Enlace wa.me con el mensaje sugerido | M, S | ⏳ |
+| GET | /customers | Lista por monto de 12 meses. Filtros: level, search, salesperson_code (status llega con las alertas) | M, S | ✅ |
+| GET | /customers/{ruc} | Ficha con nivel y resumen de 12 meses | M, S | ✅ |
+| GET | /customers/{ruc}/orders | Historial de pedidos | M, S | ✅ |
+| GET | /customers/{ruc}/products | Qué compra y con qué frecuencia | M, S | ✅ |
+| GET | /customers/{ruc}/commercial-terms | Nivel, margen, descuento máximo y días de crédito | M, S | ✅ |
+| GET | /customers/{ruc}/contacts | Registro de contactos | M, S | ✅ |
+| POST | /customers/{ruc}/contacts | Registrar un contacto y su resultado | M, S | ✅ |
+| GET | /customers/{ruc}/whatsapp-link | Enlace wa.me con el mensaje sugerido | M, S | ✅ |
 | GET | /customers/{ruc}/brief | Ficha para reunión. Query: from, to, projection (month, semester, year) | M | ⏳ |
+
+Fecha de corte: la ventana de 12 meses termina en el último pedido cargado (`data_as_of`), no en la fecha de hoy,
+porque los CSV son una foto. `level` es `null` (y `levels_configured` es `false`) mientras gerencia no defina los
+umbrales; filtrar por nivel o pedir `commercial-terms` sin umbrales responde 400 `thresholds_not_configured`.
+Un vendedor solo ve su cartera: pedir un cliente ajeno responde 403 `outside_portfolio`.
 
 ## Productos y cotizaciones — `quotations`
 | Método | Ruta | Para qué | Roles | Estado |

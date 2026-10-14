@@ -63,7 +63,7 @@ class CreateUser:
 |---|---|---|---|
 | auth | CreateSession, GetCurrentUser, UpdateOwnProfile, ListUsers, CreateUser, UpdateUser; interno: AuthenticateToken | /sessions, /me, /users | ✅ |
 | settings | GetPricing, ReplacePricing, ListCustomerLevels, ReplaceCustomerLevel, GetLevelThresholds, ReplaceLevelThresholds; internos: GetCompleteLevelRules, ClassifyLevel | /settings/* | ✅ |
-| customers | ListCustomers, GetCustomer, ListCustomerOrders, ListCustomerProducts, GetCommercialTerms, ListContacts, RegisterContact, BuildWhatsappLink, GetCustomerBrief, ListAlerts, GetAlertsSummary, GetAlert, GetAlertExplanation; sin endpoint: GenerateDailyAlerts | /customers, /alerts | ⏳ (repositorio hecho) |
+| customers | ListCustomers, GetCustomer, ListCustomerOrders, ListCustomerProducts, GetCommercialTerms, ListContacts, RegisterContact, BuildWhatsappLink, GetCustomerBrief, ListAlerts, GetAlertsSummary, GetAlert, GetAlertExplanation; sin endpoint: GenerateDailyAlerts | /customers, /alerts | Parcial: los 8 de /customers ✅; GetCustomerBrief y alertas ⏳ |
 | explanations | ExplainAlert, AskInsightQuestion | /insights/questions (ExplainAlert lo usa /alerts/{id}/explanation) | ⏳ |
 | quotations | SearchProducts, GetProduct, PreviewQuotation, IssueQuotation, ListQuotations, GetQuotation; sin endpoint: MatchConversions | /products, /quotation-previews, /quotations | ⏳ |
 | prediction | GetModelInfo; internos: PredictRepurchase, ForecastDemand | /prediction/model | ⏳ |
