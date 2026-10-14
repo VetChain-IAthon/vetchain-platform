@@ -47,7 +47,7 @@ def get_receivables_report(db: Session = Depends(get_db)) -> uc.GetReceivablesRe
 
 
 def get_kpis(db: Session = Depends(get_db)) -> uc.GetKpis:
-    return uc.GetKpis(get_dashboard_summary(db))
+    return uc.GetKpis(get_dashboard_summary(db), _sales(db), _uow(db))
 
 
 def get_funnel(db: Session = Depends(get_db)) -> uc.GetFunnelReport:

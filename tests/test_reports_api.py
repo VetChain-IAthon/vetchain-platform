@@ -65,6 +65,9 @@ def test_customer_stock_salesperson_and_unavailable_reports(client, manager):
 
 def test_all_reports_forbid_salesperson_and_reject_bad_period(client, manager, login):
     seller = login("salesperson")
+    below = next(x for x in kpis["items"] if x["code"] == "below_reference_pct")
+    # MED1 pagado a 41,67 frente a 45 (referencia P2); MED2 a 15 frente a 10 (P4): promedio ponderado por monto
+    assert below["value"] == -3.7 and below["data_origin"] == "estimated"
     for path in ("/dashboard/summary", "/reports", "/reports/kpis", "/reports/sales", "/reports/customers",
                  "/reports/stock", "/reports/receivables", "/reports/salespeople", "/reports/funnel"):
         assert client.get("/api/v1" + path, headers=seller).status_code == 403, path

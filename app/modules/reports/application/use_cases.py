@@ -302,8 +302,8 @@ class KpiReport:
 
 
 class GetKpis:
-    def __init__(self, summary: GetDashboardSummary) -> None:
-        self.summary = summary
+    def __init__(self, summary: GetDashboardSummary, sales: SalesReadRepository | None = None, uow: UnitOfWork | None = None) -> None:
+        self.summary, self.sales, self.uow = summary, sales, uow
 
     def execute(self, query: ReportQuery) -> KpiReport:
         result = self.summary.execute(query)
@@ -324,3 +324,16 @@ class GetFunnelReport:
     def execute(self, query: ReportQuery) -> Period:
         with self.uow:
             return resolve_period(self.sales, query)
+        below = self._below_reference_pct(result.period)
+        if self.sales is not None:
+            items.append(Kpi("below_reference_pct", below, None, None, DataOrigin.ESTIMATED,
+                             "no_order_data" if below is None else None))
+    def _below_reference_pct(self, period: Period) -> Decimal | None:
+        """Cuánto por debajo del último precio pagado (la referencia) se vendieron en promedio los 5 productos de mayor monto,
+        ponderado por monto. Estimado: no hay lista de precios oficial."""
+        if self.sales is None or self.uow is None or period.date_range is None:
+            return None
+        with self.uow:
+            points = [PricePoint(*row) for row in self.sales.product_price_points(period.date_range, SalesDefinition(), PRICE_KPI_TOP_PRODUCTS)]
+        return weighted_below_reference(points)
+
