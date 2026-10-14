@@ -3,7 +3,7 @@ from datetime import date
 from decimal import Decimal
 
 from app.core.domain import BusinessRuleError, Money, Ruc
-from app.modules.customers.domain.value_objects import ContactOutcome, Level, Probability
+from app.modules.customers.domain.value_objects import ContactOutcome, DiscardReason, Level, Probability
 
 
 @dataclass(frozen=True)
@@ -148,3 +148,35 @@ class AlertFigures:
 class AlertExplanation:
     text: str
     source: str  # ai | fallback
+
+
+DISCARD_NOTE_MAX_LENGTH = 300
+
+
+@dataclass(frozen=True)
+class CustomerDiscard:
+    """Un cliente dormido descartado: deja la lista de dormidos y pasa a la de descartados. Se puede restaurar.
+
+    Activo mientras `restored_on` sea None; el historial no se borra.
+    """
+
+    ruc: Ruc
+    reason: DiscardReason
+    note: str | None
+    discarded_by: int
+    discarded_on: date
+    restored_by: int | None = None
+    restored_on: date | None = None
+    id: int | None = None
+
+    def __post_init__(self) -> None:
+        note = (self.note or "").strip() or None
+        if note and len(note) > DISCARD_NOTE_MAX_LENGTH:
+            raise BusinessRuleError(f"La nota no puede pasar de {DISCARD_NOTE_MAX_LENGTH} caracteres.", "note_too_long")
+        if self.reason is DiscardReason.OTHER and note is None:
+            raise BusinessRuleError("Si el motivo es «Otro», escribe una nota que lo explique.", "note_required")
+        object.__setattr__(self, "note", note)
+
+    @property
+    def is_active(self) -> bool:
+        return self.restored_on is None

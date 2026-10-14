@@ -9,8 +9,12 @@ from app.infrastructure.clock import SystemClock
 from app.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork
 from app.modules.customers.application import use_cases as uc
 from app.modules.customers.application import public
-from app.modules.customers.infrastructure.gateways import SettingsPublicGateway
-from app.modules.customers.infrastructure.repositories import SqlAlchemyContactRepository, SqlAlchemyCustomerReadRepository
+from app.modules.customers.infrastructure.gateways import SettingsPublicGateway, UserDirectoryPublicGateway
+from app.modules.customers.infrastructure.repositories import (
+    SqlAlchemyContactRepository,
+    SqlAlchemyCustomerReadRepository,
+    SqlAlchemyDiscardRepository,
+)
 
 
 def _customers(db: Session) -> SqlAlchemyCustomerReadRepository:
@@ -34,7 +38,19 @@ def get_at_risk_follow_up(db: Session = Depends(get_db)) -> uc.GetAtRiskFollowUp
 
 
 def get_list_dormant_customers(db: Session = Depends(get_db)) -> uc.ListDormantCustomers:
-    return uc.ListDormantCustomers(_customers(db), _uow(db))
+    return uc.ListDormantCustomers(_customers(db), _uow(db), SqlAlchemyDiscardRepository(db))
+
+
+def get_list_discarded_customers(db: Session = Depends(get_db)) -> uc.ListDiscardedCustomers:
+    return uc.ListDiscardedCustomers(_customers(db), SqlAlchemyDiscardRepository(db), UserDirectoryPublicGateway(), _uow(db))
+
+
+def get_discard_customer(db: Session = Depends(get_db)) -> uc.DiscardCustomer:
+    return uc.DiscardCustomer(_customers(db), SqlAlchemyDiscardRepository(db), SystemClock(), _uow(db))
+
+
+def get_restore_customer(db: Session = Depends(get_db)) -> uc.RestoreCustomer:
+    return uc.RestoreCustomer(_customers(db), SqlAlchemyDiscardRepository(db), SystemClock(), _uow(db))
 
 
 def get_get_customer(db: Session = Depends(get_db)) -> uc.GetCustomer:

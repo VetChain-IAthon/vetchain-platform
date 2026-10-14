@@ -14,13 +14,14 @@ from app.modules.customers.domain.entities import (
     Contact,
     Customer,
     CustomerActivity,
+    CustomerDiscard,
     OrderSummary,
     PeriodOrder,
     PeriodProduct,
     ProductPurchase,
 )
-from app.modules.customers.domain.value_objects import ContactOutcome, SalespersonScope
-from app.modules.customers.infrastructure.orm import ContactRow
+from app.modules.customers.domain.value_objects import ContactOutcome, DiscardReason, SalespersonScope
+from app.modules.customers.infrastructure.orm import ContactRow, CustomerDiscardRow
 
 
 def _to_customer(row: CustomerRow) -> Customer:
@@ -178,3 +179,40 @@ class SqlAlchemyContactRepository:
 
 def _to_contact(row: ContactRow) -> Contact:
     return Contact(Ruc(row.ruc), row.user_id, ContactOutcome(row.outcome), row.contact_date, id=row.id)
+
+
+class SqlAlchemyDiscardRepository:
+    """Implementa DiscardRepository sobre la tabla customer_discards (propia de la app)."""
+
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def active_for(self, ruc: Ruc) -> CustomerDiscard | None:
+        row = self._session.scalar(
+            select(CustomerDiscardRow).where(CustomerDiscardRow.ruc == ruc.value, CustomerDiscardRow.restored_on.is_(None))
+            .order_by(CustomerDiscardRow.id.desc()).limit(1)
+        )
+        return None if row is None else _to_discard(row)
+
+    def active(self) -> dict[Ruc, CustomerDiscard]:
+        rows = self._session.scalars(
+            select(CustomerDiscardRow).where(CustomerDiscardRow.restored_on.is_(None)).order_by(CustomerDiscardRow.id)
+        )
+        return {Ruc(row.ruc): _to_discard(row) for row in rows}
+
+    def add(self, discard: CustomerDiscard) -> CustomerDiscard:
+        row = CustomerDiscardRow(ruc=discard.ruc.value, reason=discard.reason.value, note=discard.note,
+                                 discarded_by=discard.discarded_by, discarded_on=discard.discarded_on)
+        self._session.add(row)
+        self._session.flush()
+        return _to_discard(row)
+
+    def save(self, discard: CustomerDiscard) -> None:
+        row = self._session.get(CustomerDiscardRow, discard.id)
+        row.restored_by, row.restored_on = discard.restored_by, discard.restored_on
+        self._session.flush()
+
+
+def _to_discard(row: CustomerDiscardRow) -> CustomerDiscard:
+    return CustomerDiscard(Ruc(row.ruc), DiscardReason(row.reason), row.note, row.discarded_by, row.discarded_on,
+                           row.restored_by, row.restored_on, id=row.id)

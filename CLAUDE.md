@@ -37,8 +37,11 @@ Módulos y a quién pueden llamar:
 - `reports` → settings, data_imports
 - `explanations` → reports
 
-**Estado del código:** todos los módulos están en `app/modules/`. `prediction` y `explanations` solo tienen domain e
-interface con rutas 501; `import_planning` sirve un escenario de ejemplo (`simulated`) sin capa de aplicación.
+**Estado del código:** todos los módulos están en `app/modules/`. `prediction` solo tiene domain e interface con rutas
+501. `explanations` está en las cuatro capas: `POST /insights/questions` funciona y `explain_alert` (fachada) espera a
+que `customers` tenga alertas (gateway `ExplanationPublicGateway` ya escrito). Gemini: `GEMINI_API_KEY`, `GEMINI_MODEL`;
+sin clave, las explicaciones usan texto de reserva. Prueba real opcional: `GEMINI_LIVE_TEST=1 pytest -s -k live_gemini`.
+`import_planning` sirve un escenario de ejemplo (`simulated`) sin capa de aplicación.
 Hay puntos abiertos en la sección 9 de `docs/capas.md`, entre ellos un ciclo de dependencias.
 
 ## Correo (`messaging`)
@@ -99,7 +102,8 @@ Hecho: dominio de todos los módulos; infraestructura de base de datos con Alemb
 errores estándar, contrato y OpenAPI con pruebas. Base local `VetChainDb` migrada, cargada y con usuarios seed.
 También: `customers`, `reports`, `quotations`, `data_imports` y `messaging` completos; producción en Render + Neon.
 1. `prediction` (modelo XGBoost) y alertas de `customers` (`/alerts`, hoy 501).
-2. `explanations` (`/insights/questions` con Gemini, hoy 501).
+2. Conectar `ExplainAlert` a `GET /alerts/{id}/explanation` cuando existan las alertas, y ampliar las consultas
+   permitidas de `reports.public.run_allowed_query` (estado, nivel y región de clientes; antigüedad de deuda).
 3. `import_planning` con datos reales en lugar del escenario simulado.
 4. Resolver los puntos abiertos de `docs/capas.md` (ciclo entre módulos y tipos que cruzan módulos).
 5. Correo en producción: claves de Resend/Gmail en Render; el callback de OAuth no maneja la cancelación en Google (422).

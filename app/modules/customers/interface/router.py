@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 
 from app.core.application import MANAGER, SALESPERSON, Paging, SessionUser
 from app.core.auth import require_role
@@ -14,11 +14,14 @@ from app.modules.customers.interface.schemas import (
     ContactIn,
     ContactOut,
     ContactPageOut,
+    CustomerDiscardIn,
+    CustomerDiscardOut,
     CustomerDetailOut,
     CustomerListItemOut,
     AtRiskCustomerPageOut,
     AtRiskFollowUpOut,
     CustomerPageOut,
+    DiscardedCustomerPageOut,
     DormantCustomerPageOut,
     OrderOut,
     OrderPageOut,
@@ -92,6 +95,21 @@ def list_dormant_customers(
     return DormantCustomerPageOut.from_result(use_case.execute(query, uc.scope_for(user, salesperson_code)))
 
 
+@router.get("/customers/discarded", response_model=DiscardedCustomerPageOut)
+def list_discarded_customers(
+    search: str | None = Query(None, max_length=100, description="Nombre, departamento o inicio del RUC"),
+    reason: Literal["business_closed", "data_changed", "not_viable", "other"] | None = None,
+    salesperson_code: str | None = Query(None, max_length=3, description="Solo gerencia; al vendedor se le fuerza el suyo"),
+    page: int = Page,
+    per_page: int = PerPage,
+    user: SessionUser = Depends(any_role),
+    use_case: uc.ListDiscardedCustomers = Depends(deps.get_list_discarded_customers),
+):
+    """Clientes dormidos descartados (cerraron, cambiaron de datos o ya no son viables), del más reciente al más antiguo."""
+    query = uc.DiscardedCustomersQuery(search, reason, Paging(page, per_page))
+    return DiscardedCustomerPageOut.from_result(use_case.execute(query, uc.scope_for(user, salesperson_code)))
+
+
 @router.get("/customers/{ruc}", response_model=CustomerDetailOut)
 def get_customer(ruc: str, user: SessionUser = Depends(any_role), use_case: uc.GetCustomer = Depends(deps.get_get_customer)):
     """Ficha del cliente con nivel, resumen de 12 meses e historial completo."""
@@ -155,6 +173,25 @@ def register_contact(
 ):
     """Registra que contactaste hoy al cliente y qué respondió."""
     return ContactOut.from_domain(use_case.execute(uc.RegisterContactCommand(ruc, body.outcome), user, uc.scope_for(user)))
+
+
+@router.post("/customers/{ruc}/discard", response_model=CustomerDiscardOut, status_code=201)
+def discard_customer(
+    ruc: str, body: CustomerDiscardIn,
+    user: SessionUser = Depends(any_role), use_case: uc.DiscardCustomer = Depends(deps.get_discard_customer),
+):
+    """Descarta un cliente dormido: sale de la lista de dormidos y pasa a la de descartados. Se puede restaurar."""
+    discard = use_case.execute(uc.DiscardCustomerCommand(ruc, body.reason, body.note), user, uc.scope_for(user))
+    return CustomerDiscardOut.from_domain(discard)
+
+
+@router.delete("/customers/{ruc}/discard", status_code=204, response_class=Response)
+def restore_customer(
+    ruc: str, user: SessionUser = Depends(any_role), use_case: uc.RestoreCustomer = Depends(deps.get_restore_customer),
+):
+    """Restaura un cliente descartado: vuelve a la lista de dormidos. El descarte queda en el historial."""
+    use_case.execute(ruc, user, uc.scope_for(user))
+    return Response(status_code=204)
 
 
 @router.get("/customers/{ruc}/whatsapp-link", response_model=WhatsappLinkOut)

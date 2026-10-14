@@ -1,9 +1,13 @@
-"""Cableado HTTP de los repositorios de reportes."""
+"""Cableado HTTP de los repositorios de reportes, y de la fachada pública para otros módulos."""
+from collections.abc import Iterator
+from contextlib import contextmanager
+
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.database import SessionLocal, get_db
 from app.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork
+from app.modules.reports.application import public
 from app.modules.reports.application import use_cases as uc
 from app.modules.reports.infrastructure.repositories import (
     SqlReceiptsReadRepository,
@@ -53,3 +57,12 @@ def get_kpis(db: Session = Depends(get_db)) -> uc.GetKpis:
 
 def get_funnel(db: Session = Depends(get_db)) -> uc.GetFunnelReport:
     return uc.GetFunnelReport(_sales(db), _uow(db))
+
+
+@contextmanager
+def _scope() -> Iterator[tuple[SqlSalesReadRepository, SqlAlchemyUnitOfWork]]:
+    with SessionLocal() as db:
+        yield SqlSalesReadRepository(db), SqlAlchemyUnitOfWork(session=db)
+
+
+public.configure(_scope)

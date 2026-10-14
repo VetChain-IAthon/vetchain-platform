@@ -114,3 +114,12 @@ class CommercialTerms:
     margin: Percentage
     max_discount: Percentage
     credit_days: int
+
+
+class DiscardReason(StrEnum):
+    """Por qué un cliente dormido deja de considerarse para la gestión comercial."""
+
+    BUSINESS_CLOSED = "business_closed"  # el negocio cerró o dejó de operar
+    DATA_CHANGED = "data_changed"  # cambió de RUC o razón social; sigue con otro registro
+    NOT_VIABLE = "not_viable"  # deuda, riesgo o ya no conviene atenderlo
+    OTHER = "other"  # exige una nota
