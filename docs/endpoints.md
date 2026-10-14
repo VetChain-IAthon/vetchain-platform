@@ -113,10 +113,10 @@ un aviso. Los saldos del kardex están por confirmar, no hay costos para rentabi
 ## Planificación de importación — `import_planning`
 | Método | Ruta | Para qué | Roles | Estado |
 |---|---|---|---|---|
-| GET | /import-suggestions | Pedido sugerido por producto. Filtro: supplier | M | ⏳ |
-| PATCH | /import-suggestions/{suggestion_id} | Decisión: approved, rejected o volver a pending | M | ⏳ |
+| GET | /import-suggestions | Cuatro laboratorios ficticios con escenario de importación ilustrativo | M | ✅ |
+| PATCH | /import-suggestions/{suggestion_id} | Guarda la revisión `approved`, `rejected` o `pending`; no crea pedidos | M | ✅ |
 
-Sin stock y costos validados, la respuesta lleva un aviso y solo la demanda mensual es real.
+Todo el escenario de esta versión está marcado `simulated`: nombres, productos, stock, demanda, precios, costos, vencimientos y fechas. Los siete CSV no identifican el laboratorio de cada producto ni traen costos de importación o lotes. Los datos se guardan en `import_laboratories` e `import_suggestions`, separados de Defontana; no se usa IA ni se crea una orden de compra. Los cuatro nombres ficticios se reemplazarán al recibir los reales.
 
 ## Ajustes — `settings`
 | Método | Ruta | Para qué | Roles | Estado |

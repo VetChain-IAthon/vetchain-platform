@@ -8,6 +8,7 @@ Este repositorio contiene la API. La aplicación web está en [vetchain-web-appl
 
 - Sesiones y roles de gerencia y vendedor; el backend restringe la cartera visible para cada vendedor.
 - Consulta de clientes, cotizaciones, reportes y reglas del negocio.
+- Planificación de importación ilustrativa con cuatro laboratorios ficticios y decisiones de revisión guardadas; no genera compras. Esta fase no usa IA.
 - Importación de siete CSV de Defontana con revisión y carga. Los datos reales de Mederi no se publican en Git.
 - Envío de reportes por Resend desde un dominio propio verificado o desde el Gmail que cada usuario conecte con Google OAuth. Los PDF los genera la web.
 - Identificación del origen de las cifras: `real`, `estimated`, `synthetic` o `simulated`; se avisa cuando faltan datos para una conclusión confiable.
