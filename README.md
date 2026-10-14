@@ -15,12 +15,14 @@ pip install -r requirements.txt
 cp .env.example .env              # y completa los valores
 alembic upgrade head              # crea o actualiza las tablas (migraciones)
 python -m scripts.load_csv         # carga los 7 CSV de data/ (no se suben al repo)
+python -m scripts.seed_users       # crea gerencia y vendedor iniciales (SEED_* en .env)
 uvicorn app.main:app --reload
 ```
 
 Con la API encendida:
 - Documentación interactiva: http://localhost:8000/docs
 - Estado general: http://localhost:8000/health
+- API bajo http://localhost:8000/api/v1 (contrato en `docs/endpoints.md`)
 
 ## Pruebas
 

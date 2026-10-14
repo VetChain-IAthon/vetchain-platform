@@ -63,6 +63,10 @@ nunca borra); los módulos solo las leen. Guía de la capa: `docs/infraestructur
   Se conservan los términos peruanos `ruc` e `igv`.
 - En español: mensajes al usuario, mensajes de error y documentación (docstrings, comentarios, `docs/`, prompts de Gemini).
 - Rutas REST en inglés bajo `/api/v1/<recurso>`: sustantivos en plural, minúsculas con guiones. Además existe `/health`.
+  Contrato en `docs/endpoints.md`; capas de aplicación e interfaz en `docs/capas-aplicacion-presentacion.md` (auth y
+  settings son los módulos de referencia). Si cambias una ruta, actualiza `endpoints.md` y `python -m scripts.export_openapi`.
+- Sesión y roles en la interfaz: `app/core/auth.py` (`current_user`, `require_role`, `forced_salesperson_code`).
+  Rutas sin construir: `add_pending_route` (501). Decimales en JSON: `JsonNumber` (`app/core/schemas.py`).
 - Error con la misma forma en todas las rutas: `{"error": {"code": "...", "message": "..."}}`. Listas como `Page`: `items`, `total`, `page`, `per_page`.
 - Secretos solo en variables de entorno (ver `.env.example`).
 - Un módulo por vez, con pruebas por capa en `tests/` (ver `docs/capas.md`, sección 6).
@@ -73,16 +77,17 @@ nunca borra); los módulos solo las leen. Guía de la capa: `docs/infraestructur
 - Nueva migración tras cambiar el ORM: `alembic revision --autogenerate -m "..."` y revisar el archivo generado
 - Cargar los CSV: `python -m scripts.load_csv` (lee `data/mederi-1-ventas.csv` … `mederi-7-vendedores.csv`)
 - Generar el DDL de PostgreSQL: `python -m scripts.export_ddl`
+- Crear los usuarios por defecto: `python -m scripts.seed_users` (credenciales `SEED_*` en `.env`); con `--random` genera datos aleatorios y los guarda en `.env`
+- Regenerar `docs/openapi.json`: `python -m scripts.export_openapi`
 - Integración con PostgreSQL: `POSTGRES_TEST_URL=postgresql://.../vetchain_test pytest tests/test_postgres_integration.py`
 - Correr: `uvicorn app.main:app --reload`
 - Probar: `pytest`
 
 ## Qué falta (en este orden sugerido)
-Hecho: dominio de todos los módulos con shared_kernel y prueba de arquitectura; infraestructura de base de datos
-(ORM de Defontana, cargador, consultas, unidad de trabajo, DDL, Alembic); repositorios de lectura de customers y reports.
-Base local: PostgreSQL `VetChainDb` en localhost, migrada y con los CSV cargados (`.env`, ignorado por git).
-1. Resolver los puntos abiertos de `docs/capas.md` (secciones 9 y 10) y guardar el contrato de endpoints en `docs/endpoints.md`.
-2. `app/core/errors.py` y prefijo `/api/v1`.
-3. Capa de aplicación e interfaz de `auth`; luego `customers` y `reports` (sus repositorios ya existen).
-4. Repositorios y capas de `data_imports`, `settings`, `prediction`, `explanations`, `quotations`, `import_planning`.
-5. Producción: proyecto en Neon (misma región que Render), `DATABASE_URL` en Render, `alembic upgrade head` y carga de CSV.
+Hecho: dominio de todos los módulos; infraestructura de base de datos con Alembic; repositorios de customers y reports;
+`auth` y `settings` en las cuatro capas; las 49 rutas del contrato registradas (las pendientes responden 501);
+errores estándar, contrato y OpenAPI con pruebas. Base local `VetChainDb` migrada, cargada y con usuarios seed.
+1. `customers` y `reports`: casos de uso e interfaz sobre los repositorios existentes (las alertas necesitan `prediction`).
+2. `quotations`, `data_imports`, `prediction`, `explanations`, `import_planning`.
+3. Resolver los puntos abiertos de `docs/capas.md` (ciclo entre módulos y tipos que cruzan módulos).
+4. Producción: Neon, `DATABASE_URL` en Render, `alembic upgrade head`, carga de CSV y `seed_users`.

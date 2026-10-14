@@ -254,21 +254,21 @@ El esqueleto está en estructura plana. Al construir cada módulo se mueve así:
 | `service.py` | `application/use_cases.py` (y las reglas puras a `domain/services.py`) |
 | `models.py` (tablas SQLAlchemy) | `infrastructure/orm.py` (las entidades van aparte en `domain/entities.py`) |
 | ~~`app/core/mederi_tables.py`~~ | Hecho: ORM en `app/infrastructure/db/source_models.py`; `app/core/source_tables.py` queda como re-export |
-| `app/core/deps.py` | `auth/interface/dependencies.py` (`current_user`, `require_role`) |
-| `app/core/security.py` | `auth/infrastructure/` (`Pbkdf2PasswordHasher`, `JwtTokenService`) |
-| `app/core/errors.py` (nuevo) | Se queda en core: la interfaz traduce los errores del dominio |
+| ~~`app/core/deps.py`~~ | Hecho: `app/core/auth.py` (`current_user`, `require_role`, `forced_salesperson_code`), compartido por las interfaces; usa `auth.application.public` |
+| ~~`app/core/security.py`~~ | Hecho: `auth/infrastructure/security.py` (`Pbkdf2PasswordHasher`, `JwtTokenService`) |
+| ~~`app/core/errors.py` (nuevo)~~ | Hecho: traduce los errores del dominio; además `app/core/stubs.py` (501) y `app/core/schemas.py` (`JsonNumber`) |
 
 Renombres pendientes en el código para alinearlo con este contrato:
 
 | Hoy en el código | Según el contrato |
 |---|---|
-| Módulos `pricing`, `quotes`, `planning`, `data_import` | `settings`, `quotations`, `import_planning`, `data_imports` |
-| Roles `management`, `sales_rep` | `manager`, `salesperson` |
-| `sales_rep_code` | `salesperson_code` |
+| ~~Módulos `pricing`, `quotes`, `planning`, `data_import`~~ | Hecho: `settings`, `quotations`, `import_planning`, `data_imports`. El esqueleto plano se eliminó: cada módulo tiene solo `__init__.py` y sus capas |
+| ~~Roles `management`, `sales_rep`~~ | Hecho: `manager`, `salesperson` |
+| ~~`sales_rep_code`~~ | Hecho: `salesperson_code` (migración `bc3d285b5ffb`) |
 | ~~Tablas `sales_reps`, `order_items`, `kardex`, `payments`~~ | Hecho: `salespeople`, `order_lines`, `stock_balances`, `receipts` (ver `base-de-datos.md`) |
-| Tablas `customer_tiers`, `customer_rebates` | `customer_levels`, `pricing_settings`, `level_thresholds` (las rebajas por cliente no aparecen) |
-| Tablas `quotes`, `quote_lines` | `quotations`, `quotation_lines` |
-| Rutas `/api/<module>/...` y `GET /status` por módulo | `/api/v1/<recurso>` según `endpoints.md`; solo `/health` |
+| ~~Tablas `customer_tiers`, `customer_rebates`~~ | Hecho: `customer_levels`, `pricing_settings`, `level_thresholds`; las rebajas por cliente se eliminaron |
+| ~~Tablas `quotes`, `quote_lines`~~ | Eliminadas. `quotations` y `quotation_lines` se crean al construir quotations |
+| ~~Rutas `/api/<module>/...` y `GET /status`~~ | Hecho: `/api/v1/<recurso>` según `endpoints.md`; solo `/health` fuera del prefijo |
 
 ## 9. Puntos abiertos
 
@@ -285,16 +285,15 @@ Renombres pendientes en el código para alinearlo con este contrato:
 3. ~~El shared_kernel mezcla dominio e infraestructura en `app/core/`.~~ **Resuelto:** la parte pura vive en
    `app/core/domain/` (tipos, errores, `Clock`, `UnitOfWork`) y `app/core/application/` (`Page`, `Paging`).
    La infraestructura compartida (`SqlAlchemyUnitOfWork`, ORM de Defontana, cargador) vive en `app/infrastructure/`.
-4. **`endpoints.md` todavía no está en el repositorio** y la versión revisada choca con este contrato:
+4. ~~`endpoints.md` no está en el repositorio~~ **Resuelto:** `docs/endpoints.md` sigue este contrato (sin PDF,
+   cotizaciones sin edición, `/prediction/model`, 9 rutas de reports). Sus cambios están al final del documento. Los choques eran:
    - Tiene endpoints `/pdf`, pero este contrato dice "sin PDF en el backend".
    - Los estados de cotización allí son `sent`/`accepted`/`lost`, con `PUT`/`PATCH` para editar. Aquí son
      `issued`/`converted`/`expired` y una cotización emitida no se edita.
    - Aquí aparece `GET /prediction/model`, que allí no está.
    - Aquí `reports` tiene 9 casos de uso, pero allí /dashboard y /reports suman 11 endpoints.
-5. **Rebajas por cliente.** `customer_rebates` existe en el esqueleto, pero no aparece en este contrato.
-   ¿Se elimina o se vuelve parte de `settings`?
-6. **"Venta = pedidos mientras no se confirmen los estados A, C y D".** Falta documentar qué significa cada estado
-   de `orders.status` y cuáles cuentan como venta.
+5. ~~Rebajas por cliente~~ **Resuelto:** `customer_rebates` se eliminó (migración `bc3d285b5ffb`), porque el contrato no lo incluye.
+6. **Estados de pedido:** documentados en `dudas-mederi.md`. La regla de venta es provisional: excluye los cancelados (C).
 7. **Por definir con Mederi:** las 5 opciones de `ContactOutcome`.
 8. **Por decidir:** dónde guarda las filas `StagingStore`, en una tabla de paso o en `data/staging/`.
 9. **Decisiones tomadas al implementar el dominio (a validar):**
