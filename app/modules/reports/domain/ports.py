@@ -24,8 +24,8 @@ class CustomersReadRepository(Protocol):
 
     def names_by_ruc(self, rucs: list[str]) -> dict[str, str]: ...
 
-    def amounts_by_customer(self, date_range: DateRange, definition: SalesDefinition) -> list[tuple[str, Money]]:
-        """Para la concentración de clientes. Los RUC no salen de este módulo hacia la IA."""
+    def amounts_by_customer(self, date_range: DateRange, definition: SalesDefinition) -> list[tuple[str, Money, int]]:
+        """(RUC, monto, pedidos), de mayor a menor monto. Para la concentración de clientes. Los RUC no salen de este módulo hacia la IA."""
         ...
 
 

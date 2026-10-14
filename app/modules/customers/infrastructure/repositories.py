@@ -9,6 +9,7 @@ from app.core.domain import Money, Ruc
 from app.infrastructure.db.repositories import queries
 from app.infrastructure.db.source_models import Customer as CustomerRow
 from app.infrastructure.db.source_models import Order as OrderRow
+from app.infrastructure.db.source_models import Salesperson as SalespersonRow
 from app.modules.customers.domain.entities import Contact, Customer, CustomerActivity, OrderSummary, ProductPurchase
 from app.modules.customers.domain.value_objects import ContactOutcome, SalespersonScope
 from app.modules.customers.infrastructure.orm import ContactRow
@@ -97,6 +98,12 @@ class SqlAlchemyCustomerReadRepository:
             for row in queries.customer_products(self._session, ruc.value, self._exclude)
         ]
 
+    def salesperson_names(self, codes: list[str]) -> dict[str, str]:
+        if not codes:
+            return {}
+        rows = self._session.execute(select(SalespersonRow.code, SalespersonRow.name).where(SalespersonRow.code.in_(codes)))
+        return {code: " ".join(name.split()).title() for code, name in rows}
+
     @staticmethod
     def _text_filters(text: str | None) -> list:
         text = (text or "").strip()
@@ -127,6 +134,18 @@ class SqlAlchemyContactRepository:
             .offset(paging.offset).limit(paging.per_page)
         )
         return Page.of([_to_contact(row) for row in rows], total, paging)
+
+    def latest_contacts(self, rucs: list[Ruc]) -> dict[Ruc, Contact]:
+        if not rucs:
+            return {}
+        rows = self._session.scalars(
+            select(ContactRow).where(ContactRow.ruc.in_([ruc.value for ruc in rucs]))
+            .order_by(ContactRow.ruc, ContactRow.contact_date.desc(), ContactRow.id.desc())
+        )
+        latest: dict[Ruc, Contact] = {}
+        for row in rows:
+            latest.setdefault(Ruc(row.ruc), _to_contact(row))
+        return latest
 
 
 def _to_contact(row: ContactRow) -> Contact:

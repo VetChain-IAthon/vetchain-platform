@@ -254,10 +254,11 @@ def amounts_by_customer(
     date_to: date | None = None,
     exclude_statuses: Collection[str] = DEFAULT_EXCLUDED,
 ) -> list[Row]:
-    """Monto pedido (sin IGV, solo veterinarios) por cliente, de mayor a menor. Para la concentración de clientes."""
+    """Monto pedido (sin IGV, solo veterinarios) y cantidad de pedidos por cliente, de mayor a menor monto."""
     query = (
         _core_lines()
-        .add_columns(Order.ruc, func.sum(OrderLine.line_total).label("amount"))
+        .add_columns(Order.ruc, func.sum(OrderLine.line_total).label("amount"),
+                     func.count(func.distinct(Order.order_no)).label("order_count"))
         .where(*_date_filters(Order.order_date, date_from, date_to), _counted(exclude_statuses),
                OrderLine.is_bonus.is_(False))
         .group_by(Order.ruc)

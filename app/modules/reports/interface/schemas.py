@@ -2,7 +2,7 @@
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.schemas import JsonNumber
 from app.modules.reports.application import use_cases as uc
@@ -39,11 +39,12 @@ class CustomerAmountOut(BaseModel):
     name: str
     amount: JsonNumber
     share_pct: JsonNumber | None
+    order_count: int = Field(description="Pedidos del período")
     data_origin: Literal["real"] = "real"
 
     @classmethod
     def from_domain(cls, item):
-        return cls(ruc=item.ruc, name=item.name, amount=item.amount.amount, share_pct=item.share_pct)
+        return cls(ruc=item.ruc, name=item.name, amount=item.amount.amount, share_pct=item.share_pct, order_count=item.order_count)
 
 
 class DashboardSummaryOut(BaseModel):
