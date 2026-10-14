@@ -49,6 +49,7 @@ class AtRiskCustomerOut(BaseModel):
     days_since_last_order: int = Field(description="Días entre el último pedido y la fecha de corte de los datos")
     purchase_rhythm_days: JsonNumber | None = Field(description="Días promedio entre pedidos en 12 meses; null con menos de dos")
     money_at_stake: JsonNumber = Field(description="Pedido promedio de 12 meses, sin IGV")
+    amount_12m: JsonNumber = Field(description="Pedidos de 12 meses, sin IGV")
 
     @classmethod
     def from_result(cls, item: uc.AtRiskCustomer) -> "AtRiskCustomerOut":
@@ -56,7 +57,7 @@ class AtRiskCustomerOut(BaseModel):
             ruc=item.customer.ruc.value, name=item.customer.name, last_order_date=item.last_order_date,
             days_since_last_order=item.days_since_last_order,
             purchase_rhythm_days=item.rhythm.average_days if item.rhythm else None,
-            money_at_stake=item.money_at_stake.amount,
+            money_at_stake=item.money_at_stake.amount, amount_12m=item.amount_12m.amount,
         )
 
 

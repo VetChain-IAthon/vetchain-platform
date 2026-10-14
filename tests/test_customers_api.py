@@ -136,7 +136,7 @@ def test_at_risk_customer_listed(client, manager, db):
 
     item, = client.get("/api/v1/customers/at-risk", headers=manager).json()["items"]
     assert item["ruc"] == "20444444444" and item["days_since_last_order"] == 20
-    assert item["purchase_rhythm_days"] == 10 and item["money_at_stake"] == 40
+    assert item["purchase_rhythm_days"] == 10 and item["money_at_stake"] == 40 and item["amount_12m"] == 120
 
     def follow_up():
         body = client.get("/api/v1/customers/at-risk/follow-up", headers=manager).json()
