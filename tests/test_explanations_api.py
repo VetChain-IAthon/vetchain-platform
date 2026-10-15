@@ -38,7 +38,7 @@ def manager(login, db):
 @pytest.fixture()
 def fake_ai(monkeypatch):
     def _use(query):
-        monkeypatch.setattr(deps, "query_planner", lambda: _Planner(query))
+        monkeypatch.setattr(deps, "query_planner", lambda data_until=None: _Planner(query))
         monkeypatch.setattr(deps, "text_generator", lambda: _Generator())
     return _use
 

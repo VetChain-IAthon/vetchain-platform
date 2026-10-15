@@ -9,7 +9,9 @@ class ForecastComparisonOut(BaseModel):
     cutoff_month: str
     forecast_start_month: str
     moving_average_6m: float = Field(description="Cantidad total estimada para el horizonte.")
-    extra_trees: float = Field(description="Cantidad total estimada para el horizonte.")
+    extra_trees: float = Field(description="Componente Extra Trees de la mezcla. Cantidad total para el horizonte.")
+    predictive_model: float = Field(description="Cifra del modelo predictivo que se muestra: mezcla de Extra Trees, "
+                                    "Gradient Boosting y promedio móvil (o Extra Trees solo si falta el Gradient Boosting).")
     data_origin: str
     warning: str
 

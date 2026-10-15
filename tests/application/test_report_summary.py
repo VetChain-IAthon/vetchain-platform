@@ -27,3 +27,15 @@ def test_generator_failure_is_labeled():
             raise RuntimeError()
 
     assert ExplainReport(Failing()).execute("kpis", {"indicators": 12}).source == "fallback"
+
+
+def test_figures_are_rounded_before_reaching_generator():
+    class Capture:
+        def generate(self, prompt):
+            self.prompt = prompt
+            return "ok"
+
+    capture = Capture()
+    ExplainReport(capture).execute("kpis", {"indicators": 12.0, "sales_growth_pct": -8.834165289937118})
+    assert "indicadores: 12\n" in capture.prompt
+    assert "crecimiento de pedidos (%): -8.83" in capture.prompt

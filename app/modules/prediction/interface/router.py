@@ -35,7 +35,7 @@ def compare_forecasts(
     cutoff: str | None = Query(default=None, pattern=r"^\d{4}-\d{2}$"),
     use_case: CompareForecasts = Depends(get_compare_forecasts),
 ):
-    """Compara Extra Trees con el promedio móvil para cantidades registradas."""
+    """Compara el modelo predictivo (mezcla) con el promedio móvil para cantidades registradas."""
     if horizon not in (1, 3):
         raise HTTPException(422, error_body("validation_error", "El horizonte debe ser 1 o 3 meses."))
     cutoff_date = _parse_cutoff(cutoff)

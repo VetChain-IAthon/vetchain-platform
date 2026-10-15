@@ -1,4 +1,8 @@
-"""Pronóstico de cantidades registradas, con promedio móvil y Extra Trees."""
+"""Pronóstico de cantidades registradas: promedio móvil y modelo predictivo.
+
+El modelo predictivo es la mezcla a partes iguales de Extra Trees, Gradient Boosting y el promedio móvil de 6 meses
+(paquete VetChain_ExtraTrees, `vetchain_forecast/mezcla.py`). Sin el artefacto de Gradient Boosting, es Extra Trees solo.
+"""
 from dataclasses import dataclass
 from datetime import date, timedelta
 from math import isfinite
@@ -29,6 +33,7 @@ class ForecastComparison:
     forecast_start_month: str
     moving_average_6m: float
     extra_trees: float
+    predictive_model: float
     data_origin: str = "estimated"
     warning: str = (
         "Son estimaciones de cantidades solicitadas en pedidos, no ventas facturadas "
@@ -73,19 +78,39 @@ class CompareForecasts:
             **{f"{prefix}lag_{lag}m": history[-lag] for lag in (1, 2, 3, 6, 12)},
             **{f"{prefix}promedio_{span}m": mean(history[-span:]) for span in (3, 6, 12)},
             f"{prefix}std_3m": stdev(history[-3:]),
+            **_extra_features(history, prefix),
         }
         extra_trees = self.model.predict(scenario, horizon, features)
-        if not isfinite(extra_trees) or extra_trees < 0:
+        boosting = self.model.predict_boosting(scenario, horizon, features)
+        if any(value is not None and (not isfinite(value)) for value in (extra_trees, boosting)):
             raise BusinessRuleError("El modelo devolvió una cantidad inválida.", "invalid_model_output")
+        extra_trees = max(0.0, extra_trees)
+        moving_average = mean(history[-6:]) * horizon
+        predictive = extra_trees if boosting is None else (extra_trees + max(0.0, boosting) + moving_average) / 3
         return ForecastComparison(
             product_id=product_id,
             scenario=scenario,
             horizon_months=horizon,
             cutoff_month=cutoff_month.strftime("%Y-%m"),
             forecast_start_month=_month_from_number(target).strftime("%Y-%m"),
-            moving_average_6m=round(mean(history[-6:]) * horizon, 2),
+            moving_average_6m=round(moving_average, 2),
             extra_trees=round(extra_trees, 2),
+            predictive_model=round(predictive, 2),
         )
+
+
+def _extra_features(history: list[float], prefix: str) -> dict[str, float]:
+    """Variables del Gradient Boosting, solo con meses anteriores (igual que `history_features` del paquete)."""
+    last12 = history[-12:]
+    since = next((i for i in range(1, len(history) + 1) if history[-i] > 0), None)
+    return {
+        **{f"{prefix}lag_{lag}m": history[-lag] for lag in (4, 5, 7, 8, 9, 10, 11)},
+        f"{prefix}ceros_12m": float(sum(value == 0 for value in last12)),
+        f"{prefix}max_12m": max(last12),
+        f"{prefix}tendencia": mean(history[-3:]) - mean(last12),
+        f"{prefix}estacional": history[-12] - mean(last12),
+        f"{prefix}meses_desde_pedido": float(since) if since is not None else float("nan"),
+    }
 
 
 @dataclass(frozen=True)
@@ -107,12 +132,13 @@ class ExplainForecast:
             "Explica en español claro, en dos frases, estos pronósticos de cantidades solicitadas "
             "en pedidos veterinarios. Usa solo las cifras dadas. No inventes causas, porcentajes, "
             "intervalos, ventas facturadas ni recomendaciones de compra o importación. "
-            "Aclara que son estimaciones y que el resultado de tres meses es acumulado. "
-            f"Escenario: {result.scenario}. Corte: {result.cutoff_month}. "
+            "No menciones nombres de algoritmos, modelos ni proveedores de IA. "
+            + ("Aclara que son estimaciones y que la cantidad de tres meses es acumulada. " if result.horizon_months == 3
+               else "Aclara que son estimaciones. ")
+            + f"Escenario: {result.scenario}. Corte: {result.cutoff_month}. "
             f"Horizonte: {result.horizon_months} mes(es). "
             f"Promedio móvil de 6 meses: {result.moving_average_6m}. "
-            f"Extra Trees: {result.extra_trees}. "
-            "No se envían nombres ni identificadores de clientes."
+            f"Modelo predictivo: {result.predictive_model}."
         )
         try:
             text = self.generator.generate(prompt).strip()
@@ -122,7 +148,7 @@ class ExplainForecast:
             logger.warning("Gemini no pudo explicar el pronóstico; se usa texto de respaldo (%s).", type(exc).__name__)
         return ForecastExplanation(
             f"Para {result.horizon_months} {'mes' if result.horizon_months == 1 else 'meses acumulados'}, el promedio móvil estima "
-            f"{result.moving_average_6m} y Extra Trees estima {result.extra_trees} "
+            f"{result.moving_average_6m} y el modelo predictivo estima {result.predictive_model} "
             "en cantidades solicitadas. Son estimaciones; no equivalen a ventas facturadas "
             "ni indican cuánto importar.",
             "fallback",
