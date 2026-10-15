@@ -34,7 +34,7 @@ La equivalencia de ambas series y de todas las variables se contrastó con las 6
 
 Configura `FORECAST_MODELS_DIR`; en local, `models/forecast/` (ignorada por git, nunca se sube). El directorio debe contener `extratrees_A_1m`, `A_3m`, `B_1m` y `B_3m`, cada uno con archivos `.joblib` y `.json`; para la mezcla, también `boosting_*` con los mismos sufijos. Solo se cargan artefactos de origen confiable. La metadata declara scikit-learn 1.8.0 y pandas 2.2.3; esas versiones están declaradas en `requirements.txt`. Si faltan los archivos o no coinciden con la metadata, la API responde 503.
 
-En producción, provisiona esos archivos mediante un mecanismo privado del servidor antes de iniciar la API y apunta `FORECAST_MODELS_DIR` a esa ubicación. El repositorio y el frontend no contienen modelos ni CSV de Mederi. Una variable de entorno con una ruta local de desarrollo no sube los artefactos al servidor.
+En producción, los artefactos viven en el repositorio **privado** `VetChain-IAthon/vetchain-models`. El build de Render ejecuta `python -m scripts.fetch_forecast_models`, que los descarga en `FORECAST_MODELS_DIR` (`models/forecast`) con `FORECAST_MODELS_TOKEN`, un token de solo lectura de ese repositorio. Sin token, el build sigue y el pronóstico responde 503. Para actualizar el modelo: reemplazar los archivos en ese repo y volver a desplegar. El repositorio y el frontend no contienen modelos ni CSV de Mederi. Una variable de entorno con una ruta local de desarrollo no sube los artefactos al servidor.
 
 ## Interpretación
 

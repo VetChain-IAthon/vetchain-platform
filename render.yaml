@@ -5,7 +5,7 @@ services:
     region: ohio
     plan: 0.5c-512mb
     autoDeployTrigger: off
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python -m scripts.fetch_forecast_models
     preDeployCommand: alembic upgrade head
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
@@ -17,4 +17,15 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash-lite
+      # Modelos del pronóstico: se descargan en el build desde el repo privado VetChain-IAthon/vetchain-models.
+      - key: FORECAST_MODELS_TOKEN
+        sync: false
+      - key: FORECAST_MODELS_DIR
+        value: models/forecast
+      - key: GMAIL_SMTP_EMAIL
+        sync: false
+      - key: GMAIL_SMTP_APP_PASSWORD
         sync: false

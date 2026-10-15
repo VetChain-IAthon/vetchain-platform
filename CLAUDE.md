@@ -5,11 +5,13 @@ Ayuda a gerencia y a los vendedores a decidir con datos. El frontend vive en otr
 
 ## Stack
 - FastAPI (Python 3.11+), SQLAlchemy 2.0, PostgreSQL en Neon (SQLite en local)
-- Pronóstico de demanda: Extra Trees privado (escenarios A/B, horizontes 1/3) y promedio móvil de 6 meses; `FORECAST_MODELS_DIR` apunta fuera del repo. El antiguo modelo XGBoost de recompra sigue pendiente.
+- Pronóstico de demanda: mezcla de Extra Trees, Gradient Boosting y promedio móvil de 6 meses (escenarios A/B, horizontes 1/3).
+  Artefactos privados en el repo privado `VetChain-IAthon/vetchain-models`; el build los descarga a `models/forecast`
+  (`scripts/fetch_forecast_models.py`, ignorado por git). El antiguo modelo XGBoost de recompra sigue pendiente.
 - IA generativa: Gemini API (capa gratuita). Solo se le envían cifras agregadas, nunca nombres de clientes ni RUC.
 - Correo: Resend (dominio propio verificado), Gmail SMTP (una cuenta compartida) y Gmail OAuth (cada usuario conecta el suyo).
 - Despliegue: Render (`render.yaml`) desde `main`, con despliegue automático apagado: tras fusionar, *Manual Deploy*.
-  Antes de arrancar corre `alembic upgrade head`. Base en Neon. No hay GitHub Actions por ahora.
+  El build descarga los modelos del pronóstico; antes de arrancar corre `alembic upgrade head`. Base en Neon. No hay GitHub Actions por ahora.
 
 ## Arquitectura: monolito modular por capas
 Una sola API. **El contrato está en `docs/capas.md`: leerlo antes de construir un módulo.** Resumen:
