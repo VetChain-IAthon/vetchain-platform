@@ -3673,6 +3673,33 @@
         ]
       }
     },
+    "/api/v1/simulated-sections": {
+      "get": {
+        "tags": [
+          "datos simulados"
+        ],
+        "summary": "List Simulated Sections",
+        "description": "Todas las secciones simuladas. La interfaz las muestra con la etiqueta «Simulado».",
+        "operationId": "list_simulated_sections_api_v1_simulated_sections_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulatedSectionsOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -8419,6 +8446,27 @@
           "user"
         ],
         "title": "SessionOut"
+      },
+      "SimulatedSectionsOut": {
+        "properties": {
+          "origin": {
+            "type": "string",
+            "title": "Origin",
+            "description": "Siempre `simulated`: cifras de ejemplo, no datos de Mederi.",
+            "default": "simulated"
+          },
+          "sections": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Sections",
+            "description": "Bloques por clave (tiles, sections, receivables, salespeople, kpis, sales)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "sections"
+        ],
+        "title": "SimulatedSectionsOut"
       },
       "StockItemOut": {
         "properties": {

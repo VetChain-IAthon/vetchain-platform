@@ -7,3 +7,4 @@ from app.modules.quotations.infrastructure import orm as _quotations  # noqa: F4
 from app.modules.data_imports.infrastructure import orm as _data_imports  # noqa: F401
 from app.modules.messaging.infrastructure import orm as _messaging  # noqa: F401
 from app.modules.import_planning.infrastructure import orm as _import_planning  # noqa: F401
+from app.modules.simulations.infrastructure import orm as _simulations  # noqa: F401
