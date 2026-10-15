@@ -1,12 +1,14 @@
 """Prompts en archivo, texto de reserva, consultas vía reports y nombres de clientes para PrivacyGuard."""
 from pathlib import Path
 
-from sqlalchemy import select
+from datetime import date
+
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 import app.modules.reports.application.public as reports_public
 from app.core.domain import DataOrigin
-from app.infrastructure.db.source_models import Customer
+from app.infrastructure.db.source_models import Customer, Order
 from app.modules.explanations.domain.entities import AggregatedFigures, AggregatedResult, InsightQuery
 
 PROMPTS_DIR = Path(__file__).resolve().parents[4] / "prompts"
@@ -58,3 +60,8 @@ class SqlCustomerNameSource:
 
     def names(self) -> frozenset[str]:
         return frozenset(self._db.scalars(select(Customer.name)).all())
+
+
+def latest_order_date(db: Session) -> date | None:
+    """Fecha del último pedido cargado: hasta ahí llegan los datos que la IA puede consultar."""
+    return db.scalar(select(func.max(Order.order_date)))

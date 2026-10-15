@@ -87,6 +87,8 @@ La emisión recalcula la vista previa, no confía en importes enviados por la we
 | Método | Ruta | Para qué | Roles | Estado |
 |---|---|---|---|---|
 | GET | /prediction/model | Versión, fecha de entrenamiento, AUC y precisión en el 10 % superior | M | ⏳ |
+| GET | /prediction/forecasts | Compara Extra Trees y promedio móvil de 6 meses por producto, escenario A/B y horizonte 1/3; `cutoff` opcional en formato AAAA-MM | M | ✅ |
+| POST | /prediction/forecasts/explanation | Redacta con Gemini una explicación de ambos pronósticos; devuelve `source=gemini` o `fallback` | M | ✅ |
 
 ## Panel y reportes — `reports`
 | Método | Ruta | Para qué | Roles | Estado |
@@ -112,6 +114,7 @@ un aviso. Los saldos del kardex están por confirmar, no hay costos para rentabi
 | Método | Ruta | Para qué | Roles | Estado |
 |---|---|---|---|---|
 | POST | /insights/questions | Pregunta en lenguaje natural; la respuesta sale de la base y lista sus fuentes | M | ✅ |
+| POST | /insights/report-summary | Redacción opcional de KPIs, ventas, clientes, stock, cobranza, vendedores y panel a partir de métricas numéricas permitidas | M | ✅ |
 
 Gemini solo elige una consulta de la lista cerrada (`prompts/insight_planner.md`) y redacta sobre las filas agregadas que devuelve `reports.public.run_allowed_query`. Hoy responden `sales_by_month`, `sales_by_family`, `top_products` y `salesperson_performance`; las demás devuelven 400 `query_not_available`. Una pregunta con RUC, DNI, correo, celular o nombre de cliente se rechaza (400 `identifies_customer`) antes de enviarse. Sin `GEMINI_API_KEY`: 400 `ai_unavailable`.
 

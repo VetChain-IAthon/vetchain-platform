@@ -1,4 +1,5 @@
 """Casos de uso de explanations con IA falsa: sin red ni clave de Gemini."""
+from datetime import date
 from decimal import Decimal
 
 import pytest
@@ -53,9 +54,9 @@ class FakeNames:
         return frozenset({"Veterinaria San Martín SAC"})
 
 
-def _ask(planner, runner=None, generator=None):
+def _ask(planner, runner=None, generator=None, data_until=None):
     return uc.AskInsightQuestion(planner, runner or FakeRunner(), generator or FakeGenerator(),
-                                 FilePromptRepository(), FakeNames())
+                                 FilePromptRepository(), FakeNames(), data_until)
 
 
 def test_explain_alert_sends_only_aggregated_figures():
@@ -104,3 +105,12 @@ def test_answer_falls_back_to_plain_rows_and_handles_empty_period():
     assert answer.text == "Resultado de la consulta:\n- mes: 2025-01; monto_pedido: 100.00"
     empty = _ask(planner, runner=FakeRunner(rows=())).execute("¿Cuánto se pidió por mes?")
     assert empty.text == "No hay pedidos en el período consultado."
+    dated = _ask(planner, runner=FakeRunner(rows=()), data_until=date(2026, 3, 2)).execute("¿Cuánto se pidió en agosto?")
+    assert dated.text == "No hay pedidos en el período consultado. Los datos cargados llegan hasta el 02/03/2026."
+
+
+def test_planner_prompt_counts_periods_from_the_loaded_data():
+    prompt = FilePromptRepository().get("insight_planner").format(
+        today="2026-10-15", data_until="2026-03-02", question="¿Cómo vamos en agosto?")
+    assert "Los datos cargados llegan hasta 2026-03-02" in prompt
+    assert "no sea posterior a 2026-03-02" in prompt

@@ -40,12 +40,15 @@ class GeminiTextGenerator:
 class GeminiQueryPlanner:
     """Implementa QueryPlanner con salida estructurada: Gemini solo puede elegir un tipo de la lista cerrada."""
 
-    def __init__(self, client: genai.Client, model: str, prompts: PromptRepository, today: date | None = None) -> None:
+    def __init__(self, client: genai.Client, model: str, prompts: PromptRepository, today: date | None = None,
+                 data_until: date | None = None) -> None:
         self._client, self._model, self._prompts, self._today = client, model, prompts, today
+        self._data_until = data_until  # último pedido cargado: los datos no llegan a la fecha real
 
     def plan(self, question: str, allowed: tuple[AllowedQueryType, ...]) -> InsightQuery | None:
+        today = self._today or date.today()
         prompt = self._prompts.get("insight_planner").format(
-            today=(self._today or date.today()).isoformat(), question=question)
+            today=today.isoformat(), data_until=(self._data_until or today).isoformat(), question=question)
         response = self._client.models.generate_content(
             model=self._model, contents=prompt,
             config=types.GenerateContentConfig(
