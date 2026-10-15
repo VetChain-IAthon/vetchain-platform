@@ -43,7 +43,7 @@ class ExplainReport:
             raise BusinessRuleError("Las métricas del reporte no son válidas.", "invalid_report_metrics")
         if any(not isfinite(value) or abs(value) > 1_000_000_000_000 for value in metrics.values()):
             raise BusinessRuleError("Las métricas contienen cantidades inválidas.", "invalid_report_metrics")
-        facts = "\n".join(f"- {allowed[key]}: {metrics[key]}" for key in allowed if key in metrics)
+        facts = "\n".join(f"- {allowed[key]}: {_figure(metrics[key])}" for key in allowed if key in metrics)
         prompt = (
             "Redacta en español un resumen ejecutivo breve (máximo tres frases) del reporte "
             f"{report}. Usa solamente las métricas agregadas siguientes:\n{facts}\n"
@@ -56,4 +56,9 @@ class ExplainReport:
                 return ReportSummary(text, "gemini")
         except Exception:
             pass
-        return ReportSummary("Gemini no pudo redactar este resumen. Las cifras calculadas del reporte siguen disponibles.", "fallback")
+        return ReportSummary("No se pudo redactar el resumen ahora. Inténtalo de nuevo en unos minutos.", "fallback")
+
+
+def _figure(value: float) -> str:
+    """Enteros sin decimales y el resto con dos: el texto no debe arrastrar 12.0 ni -8.834165289937118."""
+    return str(int(value)) if float(value).is_integer() else f"{value:.2f}"

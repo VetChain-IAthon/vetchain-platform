@@ -107,12 +107,13 @@ class ExplainForecast:
             "Explica en español claro, en dos frases, estos pronósticos de cantidades solicitadas "
             "en pedidos veterinarios. Usa solo las cifras dadas. No inventes causas, porcentajes, "
             "intervalos, ventas facturadas ni recomendaciones de compra o importación. "
-            "Aclara que son estimaciones y que el resultado de tres meses es acumulado. "
-            f"Escenario: {result.scenario}. Corte: {result.cutoff_month}. "
+            "No menciones nombres de algoritmos, modelos ni proveedores de IA. "
+            + ("Aclara que son estimaciones y que la cantidad de tres meses es acumulada. " if result.horizon_months == 3
+               else "Aclara que son estimaciones. ")
+            + f"Escenario: {result.scenario}. Corte: {result.cutoff_month}. "
             f"Horizonte: {result.horizon_months} mes(es). "
             f"Promedio móvil de 6 meses: {result.moving_average_6m}. "
-            f"Extra Trees: {result.extra_trees}. "
-            "No se envían nombres ni identificadores de clientes."
+            f"Modelo predictivo: {result.extra_trees}."
         )
         try:
             text = self.generator.generate(prompt).strip()
@@ -122,7 +123,7 @@ class ExplainForecast:
             logger.warning("Gemini no pudo explicar el pronóstico; se usa texto de respaldo (%s).", type(exc).__name__)
         return ForecastExplanation(
             f"Para {result.horizon_months} {'mes' if result.horizon_months == 1 else 'meses acumulados'}, el promedio móvil estima "
-            f"{result.moving_average_6m} y Extra Trees estima {result.extra_trees} "
+            f"{result.moving_average_6m} y el modelo predictivo estima {result.extra_trees} "
             "en cantidades solicitadas. Son estimaciones; no equivalen a ventas facturadas "
             "ni indican cuánto importar.",
             "fallback",

@@ -3,6 +3,7 @@
 Sin GEMINI_API_KEY se inyectan adaptadores que siempre fallan: las explicaciones usan el texto de reserva y las
 preguntas responden `ai_unavailable`, sin romper el resto de la API.
 """
+from datetime import date
 from functools import lru_cache
 
 from fastapi import Depends
@@ -17,6 +18,7 @@ from app.modules.explanations.infrastructure.adapters import (
     ReportsInsightQueryRunner,
     SqlCustomerNameSource,
     TemplateFallbackTextBuilder,
+    latest_order_date,
 )
 from app.modules.explanations.infrastructure.gemini import (
     GeminiQueryPlanner,
@@ -40,11 +42,11 @@ def text_generator():
     return GeminiTextGenerator(_client(settings.gemini_api_key, settings.gemini_timeout_seconds), settings.gemini_model)
 
 
-def query_planner():
+def query_planner(data_until: date | None = None):
     if not settings.gemini_api_key:
         return UnavailableQueryPlanner()
     return GeminiQueryPlanner(_client(settings.gemini_api_key, settings.gemini_timeout_seconds), settings.gemini_model,
-                              _prompts)
+                              _prompts, data_until=data_until)
 
 
 def build_explain_alert() -> uc.ExplainAlert:
@@ -52,8 +54,9 @@ def build_explain_alert() -> uc.ExplainAlert:
 
 
 def get_ask_insight_question(db: Session = Depends(get_db)) -> uc.AskInsightQuestion:
-    return uc.AskInsightQuestion(query_planner(), ReportsInsightQueryRunner(), text_generator(), _prompts,
-                                 SqlCustomerNameSource(db))
+    data_until = latest_order_date(db)
+    return uc.AskInsightQuestion(query_planner(data_until), ReportsInsightQueryRunner(), text_generator(), _prompts,
+                                 SqlCustomerNameSource(db), data_until)
 
 
 public.configure(build_explain_alert)

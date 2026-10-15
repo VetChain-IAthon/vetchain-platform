@@ -1,6 +1,7 @@
 """Casos de uso de explanations. Gemini solo ve cifras agregadas; si falla o no hay clave, hay texto de reserva."""
 import json
 import logging
+from datetime import date
 
 from app.core.domain import BusinessRuleError
 from app.modules.explanations.domain.entities import (
@@ -49,9 +50,9 @@ class AskInsightQuestion:
     """
 
     def __init__(self, planner: QueryPlanner, runner: InsightQueryRunner, generator: TextGenerator,
-                 prompts: PromptRepository, customer_names: CustomerNameSource) -> None:
+                 prompts: PromptRepository, customer_names: CustomerNameSource, data_until: date | None = None) -> None:
         self.planner, self.runner, self.generator = planner, runner, generator
-        self.prompts, self.customer_names = prompts, customer_names
+        self.prompts, self.customer_names, self.data_until = prompts, customer_names, data_until
 
     def execute(self, question: str) -> InsightAnswer:
         question = question.strip()
@@ -78,7 +79,8 @@ class AskInsightQuestion:
 
         result = self.runner.run(query)
         if not result.rows:
-            return InsightAnswer("No hay pedidos en el período consultado.", result.sources, result.data_origin)
+            until = f" Los datos cargados llegan hasta el {self.data_until:%d/%m/%Y}." if self.data_until else ""
+            return InsightAnswer(f"No hay pedidos en el período consultado.{until}", result.sources, result.data_origin)
         try:
             prompt = self.prompts.get(ANSWER_PROMPT).format(
                 question=question, rows=json.dumps(list(result.rows), ensure_ascii=False, indent=1))
