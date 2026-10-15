@@ -8,6 +8,12 @@
 data/*
 !data/.gitkeep
 
+# Los modelos Extra Trees contienen SKU y datos empresariales: solo en almacenamiento privado.
+*.joblib
+*.pkl
+*.pickle
+models/forecast/
+
 # Python
 __pycache__/
 *.pyc

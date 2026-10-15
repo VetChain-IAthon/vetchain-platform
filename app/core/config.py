@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:3000"
     cors_origins: str = "http://localhost:3000"
     model_path: str = "models/model.json"
+    forecast_models_dir: str = ""  # directorio privado con los cuatro modelos Extra Trees
 
     # Seed de usuarios (scripts/seed_users.py). Vacíos por defecto.
     seed_manager_email: str = ""

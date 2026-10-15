@@ -10,6 +10,7 @@ Este repositorio contiene la API. La aplicación web está en [vetchain-web-appl
 - Consulta de clientes, cotizaciones, reportes y reglas del negocio.
 - Planificación de importación ilustrativa con cuatro laboratorios ficticios y decisiones de revisión guardadas; no genera compras. Esta fase no usa IA.
 - Importación de siete CSV de Defontana con revisión y carga. Los datos reales de Mederi no se publican en Git.
+- Pronóstico por producto: compara Extra Trees con un promedio móvil de seis meses para escenarios A/B y horizontes de uno o tres meses. Lee los pedidos de la base de datos y requiere cuatro artefactos privados; [guía de integración](docs/pronosticos.md).
 - Envío de reportes por Resend desde un dominio propio verificado o desde el Gmail que cada usuario conecte con Google OAuth. Los PDF los genera la web.
 - Identificación del origen de las cifras: `real`, `estimated`, `synthetic` o `simulated`; se avisa cuando faltan datos para una conclusión confiable.
 
@@ -67,14 +68,15 @@ app/
   modules/           un módulo por carpeta, en capas: domain, application, infrastructure, interface
 docs/                arquitectura, contrato de capas, base de datos y módulos
 prompts/             textos que se envían a Gemini
-scripts/             tareas sueltas: crear tablas, cargar CSV, entrenar el modelo
-models/              model.json del modelo de predicción
+scripts/             tareas sueltas: crear tablas y cargar CSV; entrenamiento de recompra pendiente
+models/              reservado para el modelo de recompra pendiente; Extra Trees se mantiene privado fuera del repo
 tests/               pruebas
 alembic/             migraciones de la base de datos
 ```
 
 Más detalle en [`CLAUDE.md`](CLAUDE.md) y la carpeta [`docs/`](docs/).
 Los archivos `.env`, bases locales y `data/*` están excluidos por `.gitignore`. [`.env.example`](.env.example) no contiene claves reales.
+Los artefactos Extra Trees no se publican en Git; configura `FORECAST_MODELS_DIR` con un directorio privado que los contenga.
 
 ## Despliegue en Render
 
