@@ -21,3 +21,19 @@ class ModelInfoRepository(Protocol):
 
 class DemandReader(Protocol):
     def monthly_demand(self, product_codes: list[str], since: date) -> list[MonthlyDemand]: ...
+
+
+class ForecastHistoryReader(Protocol):
+    def latest_order_date(self) -> date | None: ...
+
+    def first_month(self, product_code: str) -> date | None: ...
+
+    def monthly_history(self, product_code: str, scenario: str, cutoff: date) -> list[MonthlyDemand]: ...
+
+
+class ForecastModel(Protocol):
+    def predict(self, scenario: str, horizon: int, features: dict[str, str | int | float]) -> float: ...
+
+
+class ForecastTextGenerator(Protocol):
+    def generate(self, prompt: str) -> str: ...

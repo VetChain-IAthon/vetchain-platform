@@ -1533,6 +1533,53 @@
         ]
       }
     },
+    "/api/v1/insights/report-summary": {
+      "post": {
+        "tags": [
+          "preguntas a los datos"
+        ],
+        "summary": "Summarize Report",
+        "description": "Envía a Gemini únicamente las métricas numéricas permitidas del reporte.",
+        "operationId": "summarize_report_api_v1_insights_report_summary_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportSummaryIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportSummaryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/settings/pricing": {
       "get": {
         "tags": [
@@ -2183,6 +2230,140 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/prediction/forecasts": {
+      "get": {
+        "tags": [
+          "predicción"
+        ],
+        "summary": "Compare Forecasts",
+        "description": "Compara Extra Trees con el promedio móvil para cantidades registradas.",
+        "operationId": "compare_forecasts_api_v1_prediction_forecasts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "scenario",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(A|B)$",
+              "default": "A",
+              "title": "Scenario"
+            }
+          },
+          {
+            "name": "horizon",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Horizon"
+            }
+          },
+          {
+            "name": "cutoff",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cutoff"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForecastComparisonOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/prediction/forecasts/explanation": {
+      "post": {
+        "tags": [
+          "predicción"
+        ],
+        "summary": "Explain Forecast",
+        "description": "Redacta una explicación con Gemini sobre las cifras del pronóstico calculado.",
+        "operationId": "explain_forecast_api_v1_prediction_forecasts_explanation_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForecastExplanationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForecastExplanationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -5915,6 +6096,120 @@
         ],
         "title": "FollowUpBucketOut"
       },
+      "ForecastComparisonOut": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "title": "Product Id"
+          },
+          "scenario": {
+            "type": "string",
+            "title": "Scenario",
+            "description": "A: cantidad solicitada T/A; B: la misma cantidad con precio unitario positivo."
+          },
+          "horizon_months": {
+            "type": "integer",
+            "title": "Horizon Months"
+          },
+          "cutoff_month": {
+            "type": "string",
+            "title": "Cutoff Month"
+          },
+          "forecast_start_month": {
+            "type": "string",
+            "title": "Forecast Start Month"
+          },
+          "moving_average_6m": {
+            "type": "number",
+            "title": "Moving Average 6M",
+            "description": "Cantidad total estimada para el horizonte."
+          },
+          "extra_trees": {
+            "type": "number",
+            "title": "Extra Trees",
+            "description": "Cantidad total estimada para el horizonte."
+          },
+          "data_origin": {
+            "type": "string",
+            "title": "Data Origin"
+          },
+          "warning": {
+            "type": "string",
+            "title": "Warning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_id",
+          "scenario",
+          "horizon_months",
+          "cutoff_month",
+          "forecast_start_month",
+          "moving_average_6m",
+          "extra_trees",
+          "data_origin",
+          "warning"
+        ],
+        "title": "ForecastComparisonOut"
+      },
+      "ForecastExplanationIn": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Product Id"
+          },
+          "scenario": {
+            "type": "string",
+            "pattern": "^(A|B)$",
+            "title": "Scenario",
+            "default": "A"
+          },
+          "horizon": {
+            "type": "integer",
+            "maximum": 3.0,
+            "minimum": 1.0,
+            "title": "Horizon",
+            "default": 1
+          },
+          "cutoff": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cutoff"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_id"
+        ],
+        "title": "ForecastExplanationIn"
+      },
+      "ForecastExplanationOut": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "gemini si la IA redactó el texto; fallback si se usó una plantilla."
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "source"
+        ],
+        "title": "ForecastExplanationOut"
+      },
       "FunnelReportOut": {
         "properties": {
           "period": {
@@ -7673,6 +7968,60 @@
           "warning"
         ],
         "title": "ReportEntryOut"
+      },
+      "ReportSummaryIn": {
+        "properties": {
+          "report": {
+            "type": "string",
+            "enum": [
+              "dashboard",
+              "kpis",
+              "sales",
+              "customers",
+              "stock",
+              "receivables",
+              "salespeople"
+            ],
+            "title": "Report"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "maxProperties": 12,
+            "minProperties": 1,
+            "title": "Metrics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report",
+          "metrics"
+        ],
+        "title": "ReportSummaryIn"
+      },
+      "ReportSummaryOut": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "gemini",
+              "fallback"
+            ],
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "source"
+        ],
+        "title": "ReportSummaryOut"
       },
       "RowErrorOut": {
         "properties": {

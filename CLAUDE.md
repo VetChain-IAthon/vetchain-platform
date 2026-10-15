@@ -5,7 +5,7 @@ Ayuda a gerencia y a los vendedores a decidir con datos. El frontend vive en otr
 
 ## Stack
 - FastAPI (Python 3.11+), SQLAlchemy 2.0, PostgreSQL en Neon (SQLite en local)
-- Modelo de predicción: XGBoost, archivo `models/model.json` dentro del repo
+- Pronóstico de demanda: Extra Trees privado (escenarios A/B, horizontes 1/3) y promedio móvil de 6 meses; `FORECAST_MODELS_DIR` apunta fuera del repo. El antiguo modelo XGBoost de recompra sigue pendiente.
 - IA generativa: Gemini API (capa gratuita). Solo se le envían cifras agregadas, nunca nombres de clientes ni RUC.
 - Correo: Resend (dominio propio verificado), Gmail SMTP (una cuenta compartida) y Gmail OAuth (cada usuario conecta el suyo).
 - Despliegue: Render (`render.yaml`) desde `main`, con despliegue automático apagado: tras fusionar, *Manual Deploy*.
@@ -37,8 +37,7 @@ Módulos y a quién pueden llamar:
 - `reports` → settings, data_imports
 - `explanations` → reports
 
-**Estado del código:** todos los módulos están en `app/modules/`. `prediction` solo tiene domain e interface con rutas
-501. `explanations` está en las cuatro capas: `POST /insights/questions` funciona y `explain_alert` (fachada) espera a
+**Estado del código:** todos los módulos están en `app/modules/`. `prediction` sirve `GET /prediction/forecasts` con datos de la base de datos y artefactos privados; `/prediction/model` de recompra sigue en 501. `explanations` está en las cuatro capas: `POST /insights/questions` funciona y `explain_alert` (fachada) espera a
 que `customers` tenga alertas (gateway `ExplanationPublicGateway` ya escrito). Gemini: `GEMINI_API_KEY`, `GEMINI_MODEL`;
 sin clave, las explicaciones usan texto de reserva. Prueba real opcional: `GEMINI_LIVE_TEST=1 pytest -s -k live_gemini`.
 `import_planning` sirve un escenario de ejemplo (`simulated`) sin capa de aplicación.

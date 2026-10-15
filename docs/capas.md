@@ -155,6 +155,7 @@ Formato: **Dominio** (entidades, objetos de valor, reglas, servicios) · **Puert
 - **Fachada pública:** `match_conversions() -> ConversionResult(converted, expired)`.
 
 ### prediction
+- **Estado:** `GET /prediction/forecasts` compara Extra Trees privado y promedio móvil de 6 meses para demanda por producto. Lee `orders`/`order_lines` desde la base y usa `FORECAST_MODELS_DIR`; ver [`pronosticos.md`](pronosticos.md). La predicción de recompra descrita abajo continúa pendiente.
 - **Dominio:** `CustomerFeatures` (días desde el último pedido, frecuencia, monto, familias), `RepurchaseProbability`
   (0 a 1), `ModelInfo` (versión, fecha de entrenamiento, AUC, precisión en el 10 % superior), `DemandForecast`
   (producto, mes, cantidad, origen).
