@@ -341,6 +341,7 @@ class AtRiskCustomer:
     rhythm: PurchaseRhythm | None  # None: menos de dos pedidos en 12 meses, se usó el ritmo por defecto
     money_at_stake: Money  # pedido promedio de 12 meses
     amount_12m: Money = Money.zero()  # monto de pedidos de 12 meses, sin IGV
+    order_count_12m: int = 0  # pedidos de 12 meses con los que se calculó el pedido promedio
 
 
 @dataclass(frozen=True)
@@ -382,7 +383,7 @@ def _at_risk_customers(customers: CustomerReadRepository, scope: SalespersonScop
         rhythm = PurchaseRhythm.from_order_dates(act.order_dates)
         if evaluator.evaluate(act.last_order_date, rhythm, as_of) is CustomerStatus.AT_RISK:
             at_risk.append(AtRiskCustomer(customer, act.last_order_date, (as_of - act.last_order_date).days,
-                                          rhythm, AlertPrioritizer.money_at_stake(act), act.amount))
+                                          rhythm, AlertPrioritizer.money_at_stake(act), act.amount, act.order_count))
     at_risk.sort(key=lambda item: (-item.money_at_stake.amount, item.customer.name))
     return at_risk
 
