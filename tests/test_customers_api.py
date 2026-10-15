@@ -224,7 +224,9 @@ def test_discard_rules(client, manager, login, db):
     assert other.status_code == 400 and other.json()["error"]["code"] == "note_required"
     assert client.post("/api/v1/customers/20333333333/discard", headers=manager, json={"reason": "x"}).status_code == 422
     assert client.post("/api/v1/customers/99999999999/discard", headers=manager, json={"reason": "not_viable"}).status_code == 404
-    # El vendedor 002 solo descarta los de su cartera (20333333333 es del 002).
+    # Solo gerencia descarta y restaura; el vendedor 002 ve el descarte de su cartera (20333333333 es del 002).
     seller = login("salesperson")
-    assert client.post("/api/v1/customers/20333333333/discard", headers=seller, json={"reason": "not_viable"}).status_code == 201
+    assert client.post("/api/v1/customers/20333333333/discard", headers=seller, json={"reason": "not_viable"}).status_code == 403
+    assert client.post("/api/v1/customers/20333333333/discard", headers=manager, json={"reason": "not_viable"}).status_code == 201
+    assert client.delete("/api/v1/customers/20333333333/discard", headers=seller).status_code == 403
     assert client.get("/api/v1/customers/discarded", headers=seller).json()["total"] == 1

@@ -1233,7 +1233,7 @@
           "clientes y alertas"
         ],
         "summary": "Discard Customer",
-        "description": "Descarta un cliente dormido: sale de la lista de dormidos y pasa a la de descartados. Se puede restaurar.",
+        "description": "Descarta un cliente dormido: sale de la lista de dormidos y pasa a la de descartados. Se puede restaurar. Solo gerencia.",
         "operationId": "discard_customer_api_v1_customers__ruc__discard_post",
         "security": [
           {
@@ -1289,7 +1289,7 @@
           "clientes y alertas"
         ],
         "summary": "Restore Customer",
-        "description": "Restaura un cliente descartado: vuelve a la lista de dormidos. El descarte queda en el historial.",
+        "description": "Restaura un cliente descartado: vuelve a la lista de dormidos. El descarte queda en el historial. Solo gerencia.",
         "operationId": "restore_customer_api_v1_customers__ruc__discard_delete",
         "security": [
           {
@@ -3560,6 +3560,11 @@
             "type": "number",
             "title": "Amount 12M",
             "description": "Pedidos de 12 meses, sin IGV"
+          },
+          "order_count_12m": {
+            "type": "integer",
+            "title": "Order Count 12M",
+            "description": "Pedidos de 12 meses: pedido promedio = amount_12m ÷ order_count_12m"
           }
         },
         "type": "object",
@@ -3570,7 +3575,8 @@
           "days_since_last_order",
           "purchase_rhythm_days",
           "money_at_stake",
-          "amount_12m"
+          "amount_12m",
+          "order_count_12m"
         ],
         "title": "AtRiskCustomerOut"
       },
