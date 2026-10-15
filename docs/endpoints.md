@@ -58,8 +58,8 @@ la app coincidan con las tablas de este documento, y `docs/openapi.json` se rege
 | GET | /customers/{ruc}/commercial-terms | Nivel, margen, descuento máximo y días de crédito | M, S | ✅ |
 | GET | /customers/{ruc}/contacts | Registro de contactos | M, S | ✅ |
 | POST | /customers/{ruc}/contacts | Registrar un contacto y su resultado | M, S | ✅ |
-| POST | /customers/{ruc}/discard | Descartar un cliente dormido. Motivo: business_closed, data_changed, not_viable u other (exige nota) | M, S | ✅ |
-| DELETE | /customers/{ruc}/discard | Restaurarlo: vuelve a la lista de dormidos; el descarte queda en el historial | M, S | ✅ |
+| POST | /customers/{ruc}/discard | Descartar un cliente dormido. Motivo: business_closed, data_changed, not_viable u other (exige nota) | M | ✅ |
+| DELETE | /customers/{ruc}/discard | Restaurarlo: vuelve a la lista de dormidos; el descarte queda en el historial | M | ✅ |
 | GET | /customers/{ruc}/whatsapp-link | Enlace wa.me con el mensaje sugerido | M, S | ✅ |
 | GET | /customers/{ruc}/brief | Ficha para reunión (interna). Query: from, to, projection (month, semester, year). Proyección, ganancia, ofertas, guion y cobranza van como avisos | M | ✅ |
 

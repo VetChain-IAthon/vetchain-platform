@@ -178,18 +178,18 @@ def register_contact(
 @router.post("/customers/{ruc}/discard", response_model=CustomerDiscardOut, status_code=201)
 def discard_customer(
     ruc: str, body: CustomerDiscardIn,
-    user: SessionUser = Depends(any_role), use_case: uc.DiscardCustomer = Depends(deps.get_discard_customer),
+    user: SessionUser = Depends(require_role(*M)), use_case: uc.DiscardCustomer = Depends(deps.get_discard_customer),
 ):
-    """Descarta un cliente dormido: sale de la lista de dormidos y pasa a la de descartados. Se puede restaurar."""
+    """Descarta un cliente dormido: sale de la lista de dormidos y pasa a la de descartados. Se puede restaurar. Solo gerencia."""
     discard = use_case.execute(uc.DiscardCustomerCommand(ruc, body.reason, body.note), user, uc.scope_for(user))
     return CustomerDiscardOut.from_domain(discard)
 
 
 @router.delete("/customers/{ruc}/discard", status_code=204, response_class=Response)
 def restore_customer(
-    ruc: str, user: SessionUser = Depends(any_role), use_case: uc.RestoreCustomer = Depends(deps.get_restore_customer),
+    ruc: str, user: SessionUser = Depends(require_role(*M)), use_case: uc.RestoreCustomer = Depends(deps.get_restore_customer),
 ):
-    """Restaura un cliente descartado: vuelve a la lista de dormidos. El descarte queda en el historial."""
+    """Restaura un cliente descartado: vuelve a la lista de dormidos. El descarte queda en el historial. Solo gerencia."""
     use_case.execute(ruc, user, uc.scope_for(user))
     return Response(status_code=204)
 
