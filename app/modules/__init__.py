@@ -9,6 +9,7 @@ from app.modules.prediction.interface import router as prediction_router
 from app.modules.quotations.interface import router as quotations_router
 from app.modules.reports.interface import router as reports_router
 from app.modules.settings.interface import router as settings_router
+from app.modules.simulations.interface import router as simulations_router
 
 MODULES = {
     "auth": auth_router,
@@ -21,4 +22,5 @@ MODULES = {
     "import_planning": import_planning_router,
     "data_imports": data_imports_router,
     "messaging": messaging_router,
+    "simulations": simulations_router,
 }
