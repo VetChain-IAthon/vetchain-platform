@@ -30,12 +30,32 @@ class Model:
         assert features["B_promedio_6m"] == 9.5
         return 25.25
 
+    def predict_boosting(self, scenario, horizon, features):
+        return None  # solo Extra Trees, como la primera entrega
+
+
+class BlendModel(Model):
+    def predict_boosting(self, scenario, horizon, features):
+        assert features["B_lag_4m"] == 9 and features["B_lag_11m"] == 2
+        assert features["B_ceros_12m"] == 0 and features["B_max_12m"] == 12
+        assert features["B_tendencia"] == 11 - 6.5
+        assert features["B_estacional"] == 1 - 6.5
+        assert features["B_meses_desde_pedido"] == 1
+        return 31.25
+
 
 def test_forecast_compares_same_product_and_horizon():
     result = CompareForecasts(History(), Model()).execute("P1", "B", 3, date(2024, 12, 1))
     assert result.moving_average_6m == 28.5
     assert result.extra_trees == 25.25
+    assert result.predictive_model == 25.25  # sin Gradient Boosting, el modelo predictivo es Extra Trees
     assert result.forecast_start_month == "2025-01"
+
+
+def test_predictive_model_blends_extra_trees_boosting_and_moving_average():
+    result = CompareForecasts(History(), BlendModel()).execute("P1", "B", 3, date(2024, 12, 1))
+    assert result.extra_trees == 25.25
+    assert result.predictive_model == round((25.25 + 31.25 + 28.5) / 3, 2)
 
 
 def test_future_cutoff_is_rejected():

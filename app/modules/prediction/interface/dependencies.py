@@ -5,12 +5,12 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 from app.modules.prediction.application.use_cases import CompareForecasts, ExplainForecast
-from app.modules.prediction.infrastructure.forecast import PrivateExtraTreesModel, SqlForecastHistoryReader
+from app.modules.prediction.infrastructure.forecast import PrivateForecastModels, SqlForecastHistoryReader
 from app.modules.prediction.infrastructure.gemini import GeminiForecastTextGenerator
 
 
 def get_compare_forecasts(db: Session = Depends(get_db)) -> CompareForecasts:
-    return CompareForecasts(SqlForecastHistoryReader(db), PrivateExtraTreesModel(settings.forecast_models_dir))
+    return CompareForecasts(SqlForecastHistoryReader(db), PrivateForecastModels(settings.forecast_models_dir))
 
 
 def get_explain_forecast(forecasts: CompareForecasts = Depends(get_compare_forecasts)) -> ExplainForecast:

@@ -2247,7 +2247,7 @@
           "predicción"
         ],
         "summary": "Compare Forecasts",
-        "description": "Compara Extra Trees con el promedio móvil para cantidades registradas.",
+        "description": "Compara el modelo predictivo (mezcla) con el promedio móvil para cantidades registradas.",
         "operationId": "compare_forecasts_api_v1_prediction_forecasts_get",
         "security": [
           {
@@ -6127,7 +6127,12 @@
           "extra_trees": {
             "type": "number",
             "title": "Extra Trees",
-            "description": "Cantidad total estimada para el horizonte."
+            "description": "Componente Extra Trees de la mezcla. Cantidad total para el horizonte."
+          },
+          "predictive_model": {
+            "type": "number",
+            "title": "Predictive Model",
+            "description": "Cifra del modelo predictivo que se muestra: mezcla de Extra Trees, Gradient Boosting y promedio móvil (o Extra Trees solo si falta el Gradient Boosting)."
           },
           "data_origin": {
             "type": "string",
@@ -6147,6 +6152,7 @@
           "forecast_start_month",
           "moving_average_6m",
           "extra_trees",
+          "predictive_model",
           "data_origin",
           "warning"
         ],

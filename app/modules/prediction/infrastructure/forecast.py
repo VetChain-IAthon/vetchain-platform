@@ -48,13 +48,13 @@ class SqlForecastHistoryReader:
                 for row in self.session.execute(query)]
 
 
-@lru_cache(maxsize=4)
-def _load_model(directory: str, scenario: str, horizon: int):
+@lru_cache(maxsize=8)
+def _load_model(directory: str, kind: str, scenario: str, horizon: int):
     root = Path(directory)
-    stem = f"extratrees_{scenario}_{horizon}m"
+    stem = f"{kind}_{scenario}_{horizon}m"
     metadata_path, model_path = root / f"{stem}.json", root / f"{stem}.joblib"
     if not metadata_path.is_file() or not model_path.is_file():
-        raise FileNotFoundError("Falta el modelo privado Extra Trees o su metadata.")
+        raise FileNotFoundError(f"Falta el modelo privado {stem} o su metadata.")
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     if metadata.get("escenario") != scenario or metadata.get("horizonte_meses") != horizon:
         raise ValueError("La metadata del modelo no coincide con el escenario y horizonte.")
@@ -67,12 +67,25 @@ def _load_model(directory: str, scenario: str, horizon: int):
     return model, features
 
 
-class PrivateExtraTreesModel:
+class PrivateForecastModels:
+    """Artefactos privados de FORECAST_MODELS_DIR: Extra Trees (obligatorio) y Gradient Boosting (opcional).
+
+    Si el directorio solo tiene los Extra Trees de la primera entrega, el pronóstico sigue funcionando sin mezcla.
+    """
+
     def __init__(self, directory: str) -> None:
         self.directory = directory
 
-    def predict(self, scenario: str, horizon: int, features: dict[str, str | int | float]) -> float:
+    def _predict(self, kind: str, scenario: str, horizon: int, features: dict[str, str | int | float]) -> float:
         if not self.directory:
-            raise FileNotFoundError("Configura FORECAST_MODELS_DIR para usar Extra Trees.")
-        model, names = _load_model(self.directory, scenario, horizon)
+            raise FileNotFoundError("Configura FORECAST_MODELS_DIR para usar el modelo predictivo.")
+        model, names = _load_model(self.directory, kind, scenario, horizon)
         return float(model.predict(pd.DataFrame([{name: features[name] for name in names}]))[0])
+
+    def predict(self, scenario: str, horizon: int, features: dict[str, str | int | float]) -> float:
+        return self._predict("extratrees", scenario, horizon, features)
+
+    def predict_boosting(self, scenario: str, horizon: int, features: dict[str, str | int | float]) -> float | None:
+        if not (Path(self.directory) / f"boosting_{scenario}_{horizon}m.joblib").is_file():
+            return None
+        return self._predict("boosting", scenario, horizon, features)

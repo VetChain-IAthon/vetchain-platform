@@ -32,7 +32,13 @@ class ForecastHistoryReader(Protocol):
 
 
 class ForecastModel(Protocol):
-    def predict(self, scenario: str, horizon: int, features: dict[str, str | int | float]) -> float: ...
+    def predict(self, scenario: str, horizon: int, features: dict[str, str | int | float]) -> float:
+        """Extra Trees."""
+        ...
+
+    def predict_boosting(self, scenario: str, horizon: int, features: dict[str, str | int | float]) -> float | None:
+        """Gradient Boosting de la mezcla; None si su artefacto no está instalado."""
+        ...
 
 
 class ForecastTextGenerator(Protocol):
