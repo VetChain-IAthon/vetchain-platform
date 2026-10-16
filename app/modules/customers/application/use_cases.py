@@ -8,7 +8,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from app.core.application import Page, Paging, SessionUser
-from app.core.domain import BusinessRuleError, Clock, ConflictError, Money, NotFoundError, Ruc, UnitOfWork
+from app.core.domain import BusinessRuleError, Clock, ConflictError, ForbiddenError, Money, NotFoundError, Ruc, UnitOfWork
 from app.modules.customers.domain.entities import (
     Contact,
     Customer,
@@ -556,6 +556,24 @@ class RegisterContact:
             contact = self.contacts.add(contact)
             self.uow.commit()
             return contact
+
+
+class RemoveContact:
+    """Quita la marca de contacto (por ejemplo, si se marcó por error). Solo su autor o gerencia."""
+
+    def __init__(self, customers: CustomerReadRepository, contacts: ContactRepository, uow: UnitOfWork) -> None:
+        self.customers, self.contacts, self.uow = customers, contacts, uow
+
+    def execute(self, ruc: str, contact_id: int, user: SessionUser, scope: SalespersonScope) -> None:
+        with self.uow:
+            customer = _customer_in_scope(self.customers, Ruc(ruc), scope)
+            contact = self.contacts.get(contact_id)
+            if contact is None or contact.ruc != customer.ruc:
+                raise NotFoundError("No existe ese contacto para este cliente.", "contact_not_found")
+            if contact.user_id != user.id and not user.is_manager:
+                raise ForbiddenError("Solo quien registró el contacto o gerencia puede quitarlo.", "contact_not_owned")
+            self.contacts.remove(contact_id)
+            self.uow.commit()
 
 
 @dataclass(frozen=True)

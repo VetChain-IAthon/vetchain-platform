@@ -1227,6 +1227,56 @@
         }
       }
     },
+    "/api/v1/customers/{ruc}/contacts/{contact_id}": {
+      "delete": {
+        "tags": [
+          "clientes y alertas"
+        ],
+        "summary": "Remove Contact",
+        "description": "Quita una marca de contacto. Solo quien la registró o gerencia.",
+        "operationId": "remove_contact_api_v1_customers__ruc__contacts__contact_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruc",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ruc"
+            }
+          },
+          {
+            "name": "contact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Contact Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/customers/{ruc}/discard": {
       "post": {
         "tags": [
