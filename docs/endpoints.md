@@ -123,7 +123,7 @@ Gemini solo elige una consulta de la lista cerrada (`prompts/insight_planner.md`
 |---|---|---|---|---|
 | GET | /import-suggestions | Cuatro laboratorios ficticios con escenario de importación ilustrativo | M | ✅ |
 | PATCH | /import-suggestions/{suggestion_id} | Guarda la revisión `approved`, `rejected` o `pending`; no crea pedidos | M | ✅ |
-| GET | /simulated-sections | Secciones de demostración (cobranza, KPIs, lotes, alertas, proyección) con origen `simulated` | M | ✅ |
+| GET | /simulated-sections | Secciones de demostración (cobranza, KPIs, lotes, alertas, proyección) con origen `simulated` | M, S | ✅ |
 
 Todo el escenario de esta versión está marcado `simulated`: nombres, productos, stock, demanda, precios, costos, vencimientos y fechas. Los siete CSV no identifican el laboratorio de cada producto ni traen costos de importación o lotes. Los datos se guardan en `import_laboratories` e `import_suggestions`, separados de Defontana; no se usa IA ni se crea una orden de compra. Los cuatro nombres ficticios se reemplazarán al recibir los reales.
 

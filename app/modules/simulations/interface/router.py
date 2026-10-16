@@ -3,13 +3,14 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.application import MANAGER
+from app.core.application import MANAGER, SALESPERSON
 from app.core.auth import require_role
 from app.core.database import get_db
 from app.modules.simulations.infrastructure.orm import SimulatedSectionRow
 from app.modules.simulations.interface.schemas import SimulatedSectionsOut
 
-router = APIRouter(tags=["datos simulados"], dependencies=[Depends(require_role(MANAGER))])
+# Gerencia y vendedores: el vendedor ve la cobranza simulada de sus clientes en Hoy.
+router = APIRouter(tags=["datos simulados"], dependencies=[Depends(require_role(MANAGER, SALESPERSON))])
 
 
 @router.get("/simulated-sections", response_model=SimulatedSectionsOut)
