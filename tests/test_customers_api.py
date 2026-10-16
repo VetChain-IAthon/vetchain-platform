@@ -78,6 +78,11 @@ def test_contacts_flow(client, manager):
     assert created.status_code == 201 and created.json()["outcome"] == "Pidió cotización"
     listed = client.get(url, headers=manager).json()
     assert listed["total"] == 1 and listed["items"][0]["id"] == created.json()["id"]
+    contact_id = created.json()["id"]
+    assert client.delete(f"{url}/999999", headers=manager).status_code == 404
+    assert client.delete(f"/api/v1/customers/10222222222/contacts/{contact_id}", headers=manager).status_code == 404
+    assert client.delete(f"{url}/{contact_id}", headers=manager).status_code == 204
+    assert client.get(url, headers=manager).json()["total"] == 0
 
 
 def test_whatsapp_link(client, manager):

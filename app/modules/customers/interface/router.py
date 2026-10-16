@@ -175,6 +175,15 @@ def register_contact(
     return ContactOut.from_domain(use_case.execute(uc.RegisterContactCommand(ruc, body.outcome), user, uc.scope_for(user)))
 
 
+@router.delete("/customers/{ruc}/contacts/{contact_id}", status_code=204)
+def remove_contact(
+    ruc: str, contact_id: int,
+    user: SessionUser = Depends(any_role), use_case: uc.RemoveContact = Depends(deps.get_remove_contact),
+):
+    """Quita una marca de contacto. Solo quien la registró o gerencia."""
+    use_case.execute(ruc, contact_id, user, uc.scope_for(user))
+
+
 @router.post("/customers/{ruc}/discard", response_model=CustomerDiscardOut, status_code=201)
 def discard_customer(
     ruc: str, body: CustomerDiscardIn,

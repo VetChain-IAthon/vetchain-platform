@@ -81,6 +81,10 @@ def get_register_contact(db: Session = Depends(get_db)) -> uc.RegisterContact:
     return uc.RegisterContact(_customers(db), SqlAlchemyContactRepository(db), SystemClock(), _uow(db))
 
 
+def get_remove_contact(db: Session = Depends(get_db)) -> uc.RemoveContact:
+    return uc.RemoveContact(_customers(db), SqlAlchemyContactRepository(db), _uow(db))
+
+
 def get_build_whatsapp_link(db: Session = Depends(get_db)) -> uc.BuildWhatsappLink:
     return uc.BuildWhatsappLink(_customers(db), _uow(db))
 

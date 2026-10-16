@@ -155,6 +155,16 @@ class SqlAlchemyContactRepository:
         self._session.flush()
         return _to_contact(row)
 
+    def get(self, contact_id: int) -> Contact | None:
+        row = self._session.get(ContactRow, contact_id)
+        return _to_contact(row) if row else None
+
+    def remove(self, contact_id: int) -> None:
+        row = self._session.get(ContactRow, contact_id)
+        if row is not None:
+            self._session.delete(row)
+            self._session.flush()
+
     def list_for(self, ruc: Ruc, paging: Paging) -> Page[Contact]:
         filters = [ContactRow.ruc == ruc.value]
         total = self._session.scalar(select(func.count()).select_from(ContactRow).where(*filters))
